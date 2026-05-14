@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ICU Monitor</title>
+  <style>
+    :root {
+      --bg: #0c0e14;
+      --card: #141820;
+      --border: #2a3142;
+      --text: #e8ecf4;
+      --muted: #94a3b8;
+      --pink: #ff1493;
+      --pink-deep: #c71585;
+      --yellow: #f59e0b;
+      --green: #22c55e;
+      --red: #ef4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .hero {
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+    }
+    .hero h1 { margin: 0; font-size: 28px; }
+    .hero p { margin: 8px 0 0; opacity: 0.95; }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .panel h3 { margin: 0 0 12px; }
+    .muted { color: var(--muted); }
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    select, input, button {
+      background: #0f131a;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 9px 10px;
+      font-size: 14px;
+    }
+    button {
+      background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .tier-low { color: var(--green); font-weight: 700; }
+    .tier-moderate { color: var(--yellow); font-weight: 700; }
+    .tier-high { color: var(--pink); font-weight: 700; }
+    .tier-critical { color: var(--red); font-weight: 700; }
+    .small { font-size: 13px; }
+    ul { margin: 0; padding-left: 20px; }
+
+    /* Ward “room”: two rows of bays around a central aisle */
+    .ward-room {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #0a0c12;
+      padding: 14px 12px 12px;
+      margin-top: 10px;
+    }
+    .ward-label {
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .ward-row {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+    .ward-aisle {
+      min-height: 28px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px dashed #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: rgba(15, 19, 26, 0.6);
+    }
+    .bed-bay {
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 10px 10px 11px;
+      background: #0f131a;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      position: relative;
+    }
+    .bed-bay:hover { border-color: #4a5568; }
+    .bed-bay:focus-visible {
+      outline: 2px solid var(--pink);
+      outline-offset: 2px;
+    }
+    .bed-bay.selected {
+      border-style: solid;
+      border-color: var(--pink);
+      box-shadow: 0 0 0 1px rgba(255, 20, 147, 0.35);
+    }
+    .bed-bay .live-pill {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      padding: 3px 6px;
+      border-radius: 999px;
+      background: rgba(34, 197, 94, 0.15);
+      color: var(--green);
+      border: 1px solid rgba(34, 197, 94, 0.35);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+    .bed-bay h4 {
+      margin: 0 52px 6px 0;
+      font-size: 13px;
+      line-height: 1.25;
+      font-weight: 700;
+    }
+    .bed-bay .patient-id {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .bed-vitals {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px 4px;
+      font-size: 11px;
+    }
+    .bed-vitals span { color: var(--muted); display: block; font-size: 10px; }
+    .bed-vitals strong { font-size: 14px; font-weight: 700; }
+    .bed-risk-row {
+      margin-top: 9px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .bed-risk-num { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+    .bed-tier { font-size: 10px; font-weight: 800; letter-spacing: 0.04em; }
+
+    .detail-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 10px 16px;
+      margin-bottom: 10px;
+    }
+    .risk-giant {
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin: 4px 0 6px;
+    }
+    .risk-sub { font-size: 14px; color: var(--muted); margin-bottom: 10px; }
+    .chart-svg {
+      width: 100%;
+      max-width: 320px;
+      height: 100px;
+      display: block;
+      margin-top: 8px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .metric {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #0f131a;
+    }
+    .metric .label { color: var(--muted); font-size: 12px; }
+    .metric .value { font-size: 20px; font-weight: 700; margin-top: 3px; }
+    .spark {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #0f131a;
+    }
+    .spark h4 { margin: 0 0 6px; font-size: 12px; color: var(--muted); font-weight: 600; }
+    .mini-spark-svg { width: 100%; height: 44px; display: block; }
+    @media (max-width: 720px) {
+      .bed-vitals { grid-template-columns: 1fr 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>ICU Monitor</h1>
+      <p>Hemodynamic deterioration risk (next {{ horizon_hours|int }}h) · simulated live telemetry</p>
+    </div>
+
+    <div class="panel">
+      <h3>Ward controls</h3>
+      <form method="get" action="/" id="ward-form">
+        <div class="form-row">
+          <label>
+            <span class="small muted">Cohort seed</span><br />
+            <input type="number" min="0" name="seed" id="inp-seed" value="{{ seed }}" />
+          </label>
+          <label>
+            <span class="small muted">Beds in room</span><br />
+            <input type="number" min="1" max="36" name="bed_count" id="inp-bed-count" value="{{ bed_count }}" />
+          </label>
+          <label>
+            <span class="small muted">Risk model (scoring)</span><br />
+            <select name="risk_model" id="inp-risk-model">
+              {% for opt in model_options %}
+              <option value="{{ opt }}" {% if opt == risk_model %}selected{% endif %}>
+                {%- if opt == primary_model_id -%}
+                  {{ opt }} — default (interpretable)
+                {%- else -%}
+                  {{ opt }} — validation / comparison
+                {%- endif -%}
+              </option>
+              {% endfor %}
+            </select>
+          </label>
+          <input type="hidden" name="selected_bed" id="inp-selected-bed" value="{{ selected_bed_idx }}" />
+          <button type="submit">Apply cohort</button>
+        </div>
+      </form>
+      <p class="small muted" style="margin-top:10px;">
+        The <strong>{{ primary_model_id }}</strong> model is the product default (interpretable linear risk + calibrated probabilities).
+        Other trained models are included only for offline validation and benchmarking—switch above, then <strong>Apply cohort</strong>, to compare.
+        Beds cycle demo scenarios (stable → hypotension → decline → shock) so you always see a spread of risk levels.
+        Telemetry below advances on a timer to mimic streaming monitors; explanations refresh for the selected bay.
+      </p>
+    </div>
+
+    <div class="panel">
+      <h3>ICU room layout</h3>
+      <p class="small muted" style="margin-bottom:8px;">Click a bay to open the detail monitor. Vitals stream continuously on each tile.</p>
+      {% set nbeds = bed_summaries|length %}
+      {% set mid = (nbeds + 1) // 2 %}
+      <div class="ward-room" id="ward-room" role="group" aria-label="Simulated ICU bed layout">
+        <div class="ward-label">Head wall</div>
+        <div class="ward-row">
+          {% for bed in bed_summaries[0:mid] %}
+          <div
+            class="bed-bay{% if bed.bed_idx == selected_bed_idx %} selected{% endif %}"
+            tabindex="0"
+            role="button"
+            data-bed="{{ bed.bed_idx }}"
+            aria-pressed="{% if bed.bed_idx == selected_bed_idx %}true{% else %}false{% endif %}"
+          >
+            <span class="live-pill">LIVE</span>
+            <h4>{{ bed.bed_label }}</h4>
+            <div class="patient-id">{{ bed.patient_label }} · stay {{ bed.stay_id }}</div>
+            <div class="bed-vitals">
+              <div><span>MAP</span><strong class="v-map">—</strong></div>
+              <div><span>HR</span><strong class="v-hr">—</strong></div>
+              <div><span>RR</span><strong class="v-rr">—</strong></div>
+            </div>
+            <div class="bed-risk-row">
+              <div class="bed-risk-num tier-{{ bed.tier }} v-risk">…</div>
+              <div class="bed-tier tier-{{ bed.tier }} v-tier">{{ bed.tier|upper }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="ward-aisle">Staff aisle · simulated corridor</div>
+        <div class="ward-label">Foot wall</div>
+        <div class="ward-row">
+          {% for bed in bed_summaries[mid:] %}
+          <div
+            class="bed-bay{% if bed.bed_idx == selected_bed_idx %} selected{% endif %}"
+            tabindex="0"
+            role="button"
+            data-bed="{{ bed.bed_idx }}"
+            aria-pressed="{% if bed.bed_idx == selected_bed_idx %}true{% else %}false{% endif %}"
+          >
+            <span class="live-pill">LIVE</span>
+            <h4>{{ bed.bed_label }}</h4>
+            <div class="patient-id">{{ bed.patient_label }} · stay {{ bed.stay_id }}</div>
+            <div class="bed-vitals">
+              <div><span>MAP</span><strong class="v-map">—</strong></div>
+              <div><span>HR</span><strong class="v-hr">—</strong></div>
+              <div><span>RR</span><strong class="v-rr">—</strong></div>
+            </div>
+            <div class="bed-risk-row">
+              <div class="bed-risk-num tier-{{ bed.tier }} v-risk">…</div>
+              <div class="bed-tier tier-{{ bed.tier }} v-tier">{{ bed.tier|upper }}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="detail-panel">
+      <div class="detail-head">
+        <h3 style="margin:0;">Selected bay</h3>
+        <p class="small muted" id="detail-meta" style="margin:0;">
+          {{ selected_bed_row.bed_label }} · {{ selected_bed_row.patient_label }} ·
+          age {{ age }} · {{ sex }} · {{ scenario_name }} · model <strong>{{ risk_model_id }}</strong>
+        </p>
+      </div>
+      {% if not risk_model_is_primary %}
+      <p class="small muted" style="margin:0 0 12px;padding:10px 12px;border-radius:10px;border:1px solid #854d0e;background:rgba(245,158,11,0.08);">
+        <strong>Comparison mode:</strong> scores use <strong>{{ risk_model }}</strong>.
+        Product messaging and coefficient-style explanations are aligned with the primary model (<strong>{{ primary_model_id }}</strong>).
+      </p>
+      {% endif %}
+
+      <p class="tier-{{ tier }} risk-giant" id="detail-risk-big">
+        <span id="detail-risk-num">{{ risk_now_score }}</span><span class="muted" style="font-size:26px;font-weight:600">/100</span>
+      </p>
+      <p class="risk-sub" id="detail-risk-sub">
+        Calibrated hemodynamic deterioration risk within the next <strong>{{ horizon_hours|int }} hours</strong>.
+        Raw probability at this timestep ≈ <span id="detail-risk-prob">{{ "%.3f"|format(risk_now_prob) }}</span>.
+      </p>
+      <p class="tier-{{ tier }}" id="detail-tier-line">Tier: <strong id="detail-tier">{{ tier|upper }}</strong></p>
+
+      <h4 class="small muted" style="margin-top:14px;margin-bottom:6px;">Risk trend (elapsed simulated stay)</h4>
+      <svg class="chart-svg" id="detail-risk-svg" viewBox="0 0 280 90" preserveAspectRatio="xMinYMid meet" role="img" aria-label="Risk score over simulated time">
+        <rect x="0" y="0" width="280" height="90" fill="#0f131a" rx="8" />
+        <line x1="0" y1="88" x2="280" y2="88" stroke="#2a3142" stroke-width="1" />
+        <text x="6" y="14" fill="#64748b" font-size="11">100</text>
+        <text x="6" y="82" fill="#64748b" font-size="11">0</text>
+        <polyline id="detail-risk-poly" fill="none" stroke="#ff1493" stroke-width="2" points="" />
+      </svg>
+
+      <div class="grid-3" style="margin-top:12px;">
+        <div class="metric">
+          <div class="label">MAP</div>
+          <div class="value" id="detail-map">{{ "%.0f"|format(last_vitals.map) }} mmHg</div>
+        </div>
+        <div class="metric">
+          <div class="label">Heart rate</div>
+          <div class="value" id="detail-hr">{{ "%.0f"|format(last_vitals.hr) }} bpm</div>
+        </div>
+        <div class="metric">
+          <div class="label">Resp. rate</div>
+          <div class="value" id="detail-rr">{{ "%.0f"|format(last_vitals.rr) }} /min</div>
+        </div>
+      </div>
+
+      <div class="spark">
+        <h4>Heart rate trace (recent window)</h4>
+        <svg class="mini-spark-svg" id="detail-hr-spark" viewBox="0 0 280 44" preserveAspectRatio="none" aria-hidden="true">
+          <rect width="280" height="44" fill="#0f131a" rx="6" />
+          <polyline id="detail-hr-poly" fill="none" stroke="#94a3b8" stroke-width="1.5" points="" />
+        </svg>
+      </div>
+
+      <div style="margin-top:16px;">
+        <h3 style="margin-bottom:8px;">Explanations</h3>
+        <p><strong>Clinical vitals</strong> (prefix up to this timestep)</p>
+        <ul id="detail-clinical">{% for line in clinical_explanations %}<li>{{ line }}</li>{% endfor %}</ul>
+        <p><strong>Risk contributors</strong> (model at this timestep)</p>
+        <ul id="detail-model">{% for line in model_explanations %}<li>{{ line }}</li>{% endfor %}</ul>
+      </div>
+
+      <div style="margin-top:16px;">
+        <h3 style="margin-bottom:8px;">Data analysis</h3>
+        <p class="small muted" id="detail-analysis">
+          The deterioration model ingests rolling hemodynamic statistics (MAP / HR / RR trends, variability, and hypotension burden)
+          aligned to your training configuration, then outputs a calibrated probability mapped to a 0–100 score with tier cutoffs from
+          <code>risk_display.tiers</code> in <code>config.yaml</code>. Use the cohort seed and model selector above to stress different
+          synthetic patients; each bay replays a full simulated stay on a loop so you can watch risk evolve as vitals stream.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script id="ward-data" type="application/json">{{ ward_streams|tojson }}</script>
+  <script>
+    (function () {
+      const elJson = document.getElementById("ward-data");
+      const STREAMS = JSON.parse(elJson.textContent || "[]");
+      const TICK_MS = 2400;
+      let tick = 0;
+      let selectedBed = {{ selected_bed_idx|int }};
+      const seed = {{ seed|int }};
+      const bedCount = {{ bed_count|int }};
+      const riskModel = {{ risk_model|tojson }};
+
+      function streamFor(bedIdx) {
+        const b = STREAMS[bedIdx];
+        return b && b.stream ? b.stream : [];
+      }
+
+      function frameIndex(bedIdx) {
+        const s = streamFor(bedIdx);
+        if (!s.length) return 0;
+        return tick % s.length;
+      }
+
+      function currentFrame(bedIdx) {
+        const s = streamFor(bedIdx);
+        if (!s.length) return null;
+        return s[frameIndex(bedIdx)];
+      }
+
+      function tierClass(tier) {
+        return "tier-" + tier;
+      }
+
+      function paintBay(el, bedIdx) {
+        const fr = currentFrame(bedIdx);
+        if (!fr || !el) return;
+        el.querySelector(".v-map").textContent = Math.round(fr.map);
+        el.querySelector(".v-hr").textContent = Math.round(fr.hr);
+        el.querySelector(".v-rr").textContent = Math.round(fr.rr);
+        const riskEl = el.querySelector(".v-risk");
+        const tierEl = el.querySelector(".v-tier");
+        riskEl.textContent = fr.risk_score + "/100";
+        tierEl.textContent = String(fr.tier || "").toUpperCase();
+        ["tier-low", "tier-moderate", "tier-high", "tier-critical"].forEach(function (c) {
+          riskEl.classList.remove(c);
+          tierEl.classList.remove(c);
+        });
+        const tc = tierClass(fr.tier || "low");
+        riskEl.classList.add(tc);
+        tierEl.classList.add(tc);
+      }
+
+      function paintAllBays() {
+        document.querySelectorAll(".bed-bay").forEach(function (el) {
+          const idx = parseInt(el.getAttribute("data-bed"), 10);
+          paintBay(el, idx);
+        });
+      }
+
+      function riskPolylineToStep(stream, endInclusive) {
+        const w = 280, h = 88;
+        const end = Math.max(0, Math.min(endInclusive, stream.length - 1));
+        const sub = stream.slice(0, end + 1);
+        const n = sub.length;
+        if (n === 0) return "";
+        if (n === 1) {
+          const y = h - (sub[0].risk_score / 100) * h;
+          return "0," + y.toFixed(1) + " 280," + y.toFixed(1);
+        }
+        return sub
+          .map(function (p, i) {
+            const x = (i / (n - 1)) * w;
+            const y = h - (p.risk_score / 100) * h;
+            return x.toFixed(1) + "," + y.toFixed(1);
+          })
+          .join(" ");
+      }
+
+      function hrSparkPolyline(stream, endInclusive, windowPts) {
+        const w = 280, h = 44;
+        const end = Math.max(0, Math.min(endInclusive, stream.length - 1));
+        const start = Math.max(0, end - windowPts + 1);
+        const sub = stream.slice(start, end + 1);
+        const n = sub.length;
+        if (n < 2) return "";
+        let mn = sub[0].hr, mx = sub[0].hr;
+        for (let i = 1; i < n; i++) {
+          mn = Math.min(mn, sub[i].hr);
+          mx = Math.max(mx, sub[i].hr);
+        }
+        if (mx - mn < 1e-6) {
+          mn -= 1;
+          mx += 1;
+        }
+        return sub
+          .map(function (p, i) {
+            const x = (i / (n - 1)) * w;
+            const y = h - ((p.hr - mn) / (mx - mn)) * (h - 6) - 3;
+            return x.toFixed(1) + "," + y.toFixed(1);
+          })
+          .join(" ");
+      }
+
+      function syncUrl() {
+        const u = new URL(window.location.pathname, window.location.origin);
+        u.searchParams.set("seed", String(seed));
+        u.searchParams.set("bed_count", String(bedCount));
+        u.searchParams.set("selected_bed", String(selectedBed));
+        u.searchParams.set("risk_model", riskModel);
+        window.history.replaceState({}, "", u.toString());
+        var hid = document.getElementById("inp-selected-bed");
+        if (hid) hid.value = String(selectedBed);
+      }
+
+      function setSelected(bedIdx) {
+        selectedBed = Math.max(0, Math.min(bedIdx, STREAMS.length - 1));
+        document.querySelectorAll(".bed-bay").forEach(function (el) {
+          const i = parseInt(el.getAttribute("data-bed"), 10);
+          const on = i === selectedBed;
+          el.classList.toggle("selected", on);
+          el.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        syncUrl();
+        paintDetailShell();
+        fetchExplain();
+      }
+
+      function bedMeta(bedIdx) {
+        const b = STREAMS[bedIdx] || {};
+        return (
+          (b.bed_label || "Bed") +
+          " · " +
+          (b.patient_label || "") +
+          " · age " +
+          (b.age != null ? b.age : "—") +
+          " · " +
+          (b.sex || "—") +
+          " · stay " +
+          (b.stay_id != null ? b.stay_id : "") +
+          " · " +
+          (b.scenario_name || "") +
+          " · model " +
+          (b.risk_model_id || riskModel)
+        );
+      }
+
+      function paintDetailShell() {
+        const s = streamFor(selectedBed);
+        const fr = currentFrame(selectedBed);
+        const meta = document.getElementById("detail-meta");
+        if (meta) meta.textContent = bedMeta(selectedBed);
+        if (!fr) return;
+        document.getElementById("detail-risk-num").textContent = String(fr.risk_score);
+        document.getElementById("detail-tier").textContent = String(fr.tier || "").toUpperCase();
+        document.getElementById("detail-map").textContent = Math.round(fr.map) + " mmHg";
+        document.getElementById("detail-hr").textContent = Math.round(fr.hr) + " bpm";
+        document.getElementById("detail-rr").textContent = Math.round(fr.rr) + " /min";
+        var big = document.getElementById("detail-risk-big");
+        var tierLine = document.getElementById("detail-tier-line");
+        ["tier-low", "tier-moderate", "tier-high", "tier-critical"].forEach(function (c) {
+          big.classList.remove(c);
+          tierLine.classList.remove(c);
+        });
+        var tc = tierClass(fr.tier || "low");
+        big.classList.add(tc);
+        tierLine.classList.add(tc);
+        const step = frameIndex(selectedBed);
+        document.getElementById("detail-risk-poly").setAttribute("points", riskPolylineToStep(s, step));
+        document.getElementById("detail-hr-poly").setAttribute("points", hrSparkPolyline(s, step, 24));
+      }
+
+      var explainAbort = null;
+      function fetchExplain() {
+        const s = streamFor(selectedBed);
+        if (!s.length) return;
+        const step = frameIndex(selectedBed);
+        const q = new URLSearchParams({
+          seed: String(seed),
+          bed: String(selectedBed),
+          step: String(step),
+          risk_model: riskModel,
+        });
+        if (explainAbort) explainAbort.abort();
+        explainAbort = new AbortController();
+        fetch("/api/bed-frame?" + q.toString(), { signal: explainAbort.signal })
+          .then(function (r) {
+            return r.json();
+          })
+          .then(function (j) {
+            if (!j || j.error) return;
+            var probEl = document.getElementById("detail-risk-prob");
+            if (probEl && typeof j.risk_prob === "number") {
+              probEl.textContent = j.risk_prob.toFixed(3);
+            }
+            function fillList(id, items) {
+              var ul = document.getElementById(id);
+              if (!ul) return;
+              ul.innerHTML = "";
+              (items || []).forEach(function (line) {
+                var li = document.createElement("li");
+                li.textContent = line;
+                ul.appendChild(li);
+              });
+            }
+            fillList("detail-clinical", j.clinical);
+            fillList("detail-model", j.model);
+          })
+          .catch(function () {});
+      }
+
+      document.querySelectorAll(".bed-bay").forEach(function (el) {
+        el.addEventListener("click", function () {
+          var idx = parseInt(el.getAttribute("data-bed"), 10);
+          setSelected(idx);
+        });
+        el.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            var idx = parseInt(el.getAttribute("data-bed"), 10);
+            setSelected(idx);
+          }
+        });
+      });
+
+      paintAllBays();
+      paintDetailShell();
+      fetchExplain();
+
+      setInterval(function () {
+        tick += 1;
+        paintAllBays();
+        paintDetailShell();
+        fetchExplain();
+      }, TICK_MS);
+    })();
+  </script>
+</body>
+</html>

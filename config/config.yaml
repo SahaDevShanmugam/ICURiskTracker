@@ -1,0 +1,86 @@
+# Hemodynamic deterioration risk (0–100) — MIMIC-IV itemids: validate against https://mimic.mit.edu/docs/
+
+data:
+  parquet_dir: data/processed
+  random_seed: 42
+  grid_minutes: 5
+  max_forward_fill_minutes: 45
+
+mimic:
+  # Full MIMIC-IV v3.1 extract (icu/ + hosp/ CSV.GZ) at repo root.
+  data_root: mimic-iv-3.1
+  # Subset for faster parquet builds; random sample of eligible stays (seed: data.random_seed).
+  max_stays: 10000
+  chartevents_chunksize: 500000
+  labevents_chunksize: 500000
+  min_vital_rows_per_stay: 3
+
+  map_itemids: [220052, 225312, 224642]
+  sbp_itemids: [220050, 220179, 224167]
+  dbp_itemids: [220051, 220180, 224643]
+  hr_itemids: [220045]
+  rr_itemids: [223830, 220210, 224689]
+  lactate_itemids: [50813, 52442]
+
+  vasopressor_itemids:
+    - 221906
+    - 229617
+    - 221289
+    - 222051
+    - 221662
+    - 229776
+    - 222315
+    - 221749
+    - 221986
+    - 229315
+
+cohort:
+  min_icu_length_hours: 4
+  first_icu_stay_only: true
+
+alarms:
+  map_threshold_mmhg: 65
+  sbp_threshold_mmhg: 90
+  merge_gap_minutes: 15
+
+labels:
+  # Used for alarm-episode construction if re-enabled; not used by deterioration-only train path.
+  sustained_hypotension_minutes: 12
+  intervention_lookahead_minutes: 60
+  deterioration_horizon_hours: 6
+  # Sustained hypotension in the deterioration horizon (MAP/SBP thresholds from alarms.*).
+  persistent_hypotension_minutes: 20
+
+features:
+  rolling_windows_minutes: [5, 15, 30]
+  slope_points: 6
+
+# Risk score = round(100 * P(deterioration)); tiers use integer score in [0, 100].
+risk_display:
+  tiers:
+    - { id: low, below: 20 }
+    - { id: moderate, below: 50 }
+    - { id: high, below: 75 }
+    - { id: critical, below: 101 }
+
+models:
+  calibration: isotonic # none | platt | isotonic
+  # Primary model: used as the product default in the UI, for permutation importance in metadata,
+  # and for optional logistic coefficient text in explanations. Choose an interpretable model.
+  deterioration_primary: logistic
+  deterioration_models:
+    - id: logistic
+      type: logistic # default / interpretable (linear + calibrated)
+    - id: xgboost
+      type: xgboost # offline validation & ROC/calibration comparison — not the product default
+
+# Unused while alarm validity / fusion UI are deferred (kept for YAML compatibility).
+# decision:
+#   tau_d_low: 0.35
+#   tau_d_high: 0.55
+#   tau_a_false: 0.45
+#   tau_a_true: 0.55
+#   fusion_weights: [0.5, 0.5]
+
+evaluation:
+  threshold_sweep_steps: 12
