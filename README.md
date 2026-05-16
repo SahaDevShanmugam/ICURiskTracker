@@ -6,7 +6,7 @@ Research prototype: **calibrated probability** of short-horizon hemodynamic dete
 
 ## Training data
 
-- **Source:** credentialed **MIMIC-IV v3.1** (or compatible) CSV.GZ under `mimic-iv-3.1/` at the repo root (`icu/`, `hosp/`). `mimic.data_root` in [`config/config.yaml`](config/config.yaml) points there by default. Due to distribution guidelines, the mimic-iv 3.1 data has not been included in this repository.
+- **Source:** credentialed **MIMIC-IV v3.1** (or compatible) CSV.GZ under `mimic-iv-3.1/` at the repo root (`icu/`, `hosp/`). `mimic.data_root` in [`config/config.yaml`](config/config.yaml) points there by default. Due to distribution guidelines, the MIMIC-IV 3.1 dataset has been excluded from this repository.
 - **Override:** `python scripts/build_mimic_parquet.py --mimic-root /path/to/mimic-iv-3.1` or edit `mimic.data_root`. For large extracts, tune `chartevents_chunksize` / `labevents_chunksize` and consider `cohort.min_icu_length_hours` (e.g. 12) for stricter cohorts.
 - **Subset:** `mimic.max_stays` (e.g. `10000`) keeps a **random** sample of eligible ICU stays after cohort filters, using `data.random_seed` for reproducibility. Set to `null` to use all eligible stays. Note: `chartevents` is still read in full; subsetting mainly shrinks later per-stay work and output size.
 
