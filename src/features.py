@@ -19,12 +19,17 @@ BASE_KEEP = [
 
 
 def _rolling_stats(s: pd.Series, w: int, name: str) -> pd.DataFrame:
-    r = s.rolling(window=w, min_periods=max(1, w // 3))
+    # Use min_periods=1 for mean/min so early timesteps reflect partial windows (current vitals),
+    # not NaN→0 which reads as "MAP/SBP collapsed to zero" to the deterioration model.
+    mean_r = s.rolling(window=w, min_periods=1).mean()
+    min_r = s.rolling(window=w, min_periods=1).min()
+    std_min_periods = 2 if w >= 2 else 1
+    std_r = s.rolling(window=w, min_periods=std_min_periods).std()
     return pd.DataFrame(
         {
-            f"{name}_mean_{w}": r.mean(),
-            f"{name}_std_{w}": r.std(),
-            f"{name}_min_{w}": r.min(),
+            f"{name}_mean_{w}": mean_r,
+            f"{name}_std_{w}": std_r,
+            f"{name}_min_{w}": min_r,
         }
     )
 

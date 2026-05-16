@@ -52,6 +52,36 @@
       gap: 8px;
       margin-top: 8px;
     }
+    #ward-form .ward-cohort-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+      align-items: start;
+    }
+    @media (max-width: 560px) {
+      #ward-form .ward-cohort-row {
+        grid-template-columns: 1fr;
+      }
+    }
+    #ward-form .ward-cohort-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 0;
+    }
+    #ward-form .ward-cohort-field > span.small {
+      min-height: calc(13px * 1.35);
+      line-height: 1.35;
+    }
+    #ward-form .ward-cohort-field input,
+    #ward-form .ward-cohort-field button {
+      width: 100%;
+      margin: 0;
+      box-sizing: border-box;
+      min-height: 40px;
+      padding: 8px 10px;
+    }
     select, input, button {
       background: #0f131a;
       color: var(--text);
@@ -73,40 +103,21 @@
     .small { font-size: 13px; }
     ul { margin: 0; padding-left: 20px; }
 
-    /* Ward “room”: two rows of bays around a central aisle */
+    /* Ward “room”: grid of bays — always 6 columns; last row shows remainder */
     .ward-room {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
       border: 1px solid var(--border);
       border-radius: 14px;
       background: #0a0c12;
       padding: 14px 12px 12px;
       margin-top: 10px;
     }
-    .ward-label {
-      font-size: 11px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-      text-align: center;
-      margin-bottom: 8px;
-    }
     .ward-row {
       display: grid;
       gap: 10px;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    }
-    .ward-aisle {
-      min-height: 28px;
-      margin: 10px 0;
-      border-radius: 8px;
-      border: 1px dashed #334155;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      color: var(--muted);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      background: rgba(15, 19, 26, 0.6);
+      grid-template-columns: repeat(6, minmax(0, 1fr));
     }
     .bed-bay {
       border: 1px dashed var(--border);
@@ -117,6 +128,7 @@
       text-align: left;
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
       position: relative;
+      min-width: 0;
     }
     .bed-bay:hover { border-color: #4a5568; }
     .bed-bay:focus-visible {
@@ -173,9 +185,319 @@
       align-items: baseline;
       justify-content: space-between;
       gap: 8px;
+      min-width: 0;
     }
-    .bed-risk-num { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
-    .bed-tier { font-size: 10px; font-weight: 800; letter-spacing: 0.04em; }
+    .bed-risk-num { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; min-width: 0; }
+    .bed-tier { font-size: 10px; font-weight: 800; letter-spacing: 0.04em; flex-shrink: 0; text-align: right; max-width: 100%; word-break: break-word; }
+    .bed-risk-delta {
+      font-size: 10px;
+      font-weight: 700;
+      margin-top: 4px;
+      min-height: 14px;
+    }
+    .bed-risk-delta.rising { color: var(--red); }
+    .bed-risk-delta.falling { color: var(--green); }
+    .clinical-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+      min-height: 18px;
+    }
+    .clinical-badge {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      line-height: 1.2;
+    }
+    .clinical-badge--alert {
+      color: #fecaca;
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.45);
+    }
+    .clinical-badge--warn {
+      color: #fde68a;
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+    .ward-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px 16px;
+      margin-bottom: 10px;
+    }
+    .ward-toolbar label {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ward-toolbar select {
+      padding: 6px 8px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+    .ward-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(15, 19, 26, 0.85);
+      font-size: 12px;
+    }
+    .ward-summary .sum-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .ward-summary .sum-count {
+      font-weight: 800;
+      font-size: 15px;
+    }
+    .ward-summary .sum-label {
+      color: var(--muted);
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+    }
+    .bed-bay.ward-filter-hidden {
+      display: none;
+    }
+    #detail-clinical-badges { margin: 10px 0 4px; }
+
+    .patient-clinical-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      background: #0f131a;
+    }
+    .patient-clinical-card .pc-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .patient-clinical-card .pc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px 16px;
+    }
+    .patient-clinical-card .pc-label {
+      font-size: 11px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 3px;
+    }
+    .patient-clinical-card .pc-value {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+    .patient-clinical-card .pc-span-2 {
+      grid-column: 1 / -1;
+    }
+
+    .risk-log-panel {
+      margin-top: 22px;
+      padding: 14px 16px 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #0f131a;
+    }
+    .risk-log-panel h3 {
+      margin: 0 0 4px;
+      font-size: 17px;
+    }
+    .risk-log-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 8px 14px;
+      justify-content: space-between;
+    }
+    .risk-log-badge {
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .risk-log-badge--alert {
+      color: #f59e0b;
+      border-color: rgba(245, 158, 11, 0.55);
+      background: rgba(245, 158, 11, 0.1);
+    }
+    .risk-log-badge--ok {
+      color: var(--green);
+      border-color: rgba(34, 197, 94, 0.45);
+      background: rgba(34, 197, 94, 0.08);
+    }
+    .risk-log-banner {
+      margin: 12px 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      background: rgba(239, 68, 68, 0.09);
+      color: #fecaca;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .risk-log-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .risk-log-total-count {
+      font-size: 12px;
+      line-height: 1.35;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .risk-log-total-count .risk-log-total-num {
+      font-size: 1.35rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+      vertical-align: baseline;
+    }
+    .risk-log-ack-all-btn {
+      flex-shrink: 0;
+      margin-left: auto;
+      padding: 8px 16px;
+      border-radius: 9px;
+      border: 1px solid rgba(245, 158, 11, 0.55);
+      background: rgba(245, 158, 11, 0.12);
+      color: #fcd34d;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .risk-log-ack-all-btn:hover:not(:disabled) {
+      border-color: rgba(255, 20, 147, 0.65);
+      color: #fda4af;
+      background: rgba(255, 20, 147, 0.1);
+    }
+    .risk-log-ack-all-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .risk-log-scroll {
+      max-height: min(24.5rem, 52vh);
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 10px 10px 6px;
+      margin-bottom: 4px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(10, 12, 18, 0.55);
+      scroll-behavior: auto;
+    }
+    .risk-log-scroll .risk-log-item:last-child {
+      margin-bottom: 0;
+    }
+    .risk-log-item {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 10px 12px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .risk-log-leading {
+      flex: 0 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 12px;
+    }
+    .risk-log-explain {
+      flex: 1 1 140px;
+      min-width: 100px;
+      font-size: 12px;
+      line-height: 1.38;
+      color: #94a3b8;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    @supports not (-webkit-line-clamp: 2) {
+      .risk-log-explain {
+        max-height: 2.8em;
+      }
+    }
+    .risk-log-item--pending {
+      border-color: rgba(245, 158, 11, 0.45);
+      background: rgba(245, 158, 11, 0.06);
+    }
+    .risk-log-item--acked {
+      opacity: 0.82;
+      border-style: dashed;
+    }
+    .risk-log-item time {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .risk-log-item .risk-log-score {
+      font-weight: 800;
+    }
+    .risk-log-ack-btn {
+      flex-shrink: 0;
+      padding: 7px 14px;
+      border-radius: 9px;
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      background: #1a2230;
+      color: var(--text);
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .risk-log-ack-btn:hover {
+      border-color: rgba(255, 20, 147, 0.65);
+      color: var(--pink);
+    }
+    .risk-log-acked-tag {
+      flex-shrink: 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--green);
+    }
+    .export-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .export-actions button {
+      flex: 1 1 200px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 13px;
+      background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+      color: #fff;
+    }
 
     .detail-head {
       display: flex;
@@ -192,12 +514,112 @@
       margin: 4px 0 6px;
     }
     .risk-sub { font-size: 14px; color: var(--muted); margin-bottom: 10px; }
-    .chart-svg {
+    #chart-sync-zone {
       width: 100%;
-      max-width: 320px;
-      height: 100px;
+      margin-top: 4px;
+      /* Lets chart height follow width (215/400) without shrinking width when max-height caps. */
+      container-type: inline-size;
+      container-name: chartzone;
+    }
+    .chart-svg-frame {
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #0f131a;
+      min-height: 150px;
+      height: auto;
+      aspect-ratio: 400 / 215;
+      max-height: min(46vh, 400px);
+    }
+    .chart-svg-frame svg {
+      width: 100%;
+      height: 100%;
       display: block;
-      margin-top: 8px;
+    }
+    @supports (width: 1cqw) {
+      .chart-svg-frame {
+        aspect-ratio: unset;
+        max-height: unset;
+        height: min(53.75cqw, min(46vh, 400px));
+      }
+    }
+    .chart-axis-label {
+      fill: #64748b;
+      font-size: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .chart-axis-title {
+      fill: #94a3b8;
+      font-size: 7px;
+      font-weight: 600;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .chart-risk-legend {
+      fill: #94a3b8;
+      font-size: 6.5px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .chart-risk-poly--logistic {
+      fill: none;
+      stroke: #94a3b8;
+      stroke-width: 1.75;
+      opacity: 0.92;
+      pointer-events: none;
+    }
+    .chart-risk-poly--xgboost {
+      fill: none;
+      stroke: #ff1493;
+      stroke-width: 2;
+      pointer-events: none;
+    }
+    .chart-vital-poly--map {
+      fill: none;
+      stroke: #67e8f9;
+      stroke-width: 1.5;
+      pointer-events: none;
+    }
+    /* Dashed vital thresholds (MAP hypotension line, HR tachycardia line) */
+    .chart-map-threshold {
+      stroke: #ef4444;
+      stroke-width: 1;
+      stroke-dasharray: 5 4;
+      opacity: 0.55;
+      pointer-events: none;
+    }
+    .chart-hover-dot--logistic {
+      fill: #cbd5e1;
+      stroke: #475569;
+      stroke-width: 1;
+      pointer-events: none;
+    }
+    .chart-hover-dot--xgboost {
+      fill: #f8fafc;
+      stroke: #ff1493;
+      stroke-width: 1;
+      pointer-events: none;
+    }
+    .chart-risk-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px 12px;
+      margin-top: 14px;
+      margin-bottom: 4px;
+    }
+    .chart-risk-row h4 { margin: 0; }
+    .chart-risk-view {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .chart-risk-view select {
+      padding: 6px 8px;
+      font-size: 12px;
+      border-radius: 8px;
+      min-width: 9rem;
     }
     .grid-3 {
       display: grid;
@@ -212,15 +634,42 @@
     }
     .metric .label { color: var(--muted); font-size: 12px; }
     .metric .value { font-size: 20px; font-weight: 700; margin-top: 3px; }
-    .spark {
-      margin-top: 12px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 8px 10px;
-      background: #0f131a;
+    .chart-stack {
+      max-width: none;
+      width: 100%;
     }
-    .spark h4 { margin: 0 0 6px; font-size: 12px; color: var(--muted); font-weight: 600; }
-    .mini-spark-svg { width: 100%; height: 44px; display: block; }
+    .chart-stack .chart-hint {
+      display: none;
+    }
+    .chart-hit { cursor: crosshair; }
+    .chart-crosshair {
+      stroke: rgba(248, 250, 252, 0.75);
+      stroke-width: 1;
+      pointer-events: none;
+    }
+    .chart-hover-dot {
+      fill: #f8fafc;
+      stroke: #334155;
+      stroke-width: 1;
+      pointer-events: none;
+    }
+    #chart-sync-tooltip {
+      position: fixed;
+      z-index: 100;
+      display: none;
+      pointer-events: none;
+      background: rgba(15, 19, 26, 0.97);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 11px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--text);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+      max-width: 260px;
+    }
+    #chart-sync-tooltip .t-time { color: var(--muted); font-size: 11px; margin-bottom: 4px; }
+    #chart-sync-tooltip .t-row { margin-top: 2px; }
     @media (max-width: 720px) {
       .bed-vitals { grid-template-columns: 1fr 1fr; }
       .grid-3 { grid-template-columns: 1fr; }
@@ -237,50 +686,49 @@
     <div class="panel">
       <h3>Ward controls</h3>
       <form method="get" action="/" id="ward-form">
-        <div class="form-row">
-          <label>
-            <span class="small muted">Cohort seed</span><br />
+        <div class="ward-cohort-row">
+          <div class="ward-cohort-field">
+            <span class="small muted">Cohort seed</span>
             <input type="number" min="0" name="seed" id="inp-seed" value="{{ seed }}" />
-          </label>
-          <label>
-            <span class="small muted">Beds in room</span><br />
+          </div>
+          <div class="ward-cohort-field">
+            <span class="small muted">Beds in room</span>
             <input type="number" min="1" max="36" name="bed_count" id="inp-bed-count" value="{{ bed_count }}" />
-          </label>
-          <label>
-            <span class="small muted">Risk model (scoring)</span><br />
-            <select name="risk_model" id="inp-risk-model">
-              {% for opt in model_options %}
-              <option value="{{ opt }}" {% if opt == risk_model %}selected{% endif %}>
-                {%- if opt == primary_model_id -%}
-                  {{ opt }} — default (interpretable)
-                {%- else -%}
-                  {{ opt }} — validation / comparison
-                {%- endif -%}
-              </option>
-              {% endfor %}
-            </select>
-          </label>
-          <input type="hidden" name="selected_bed" id="inp-selected-bed" value="{{ selected_bed_idx }}" />
-          <button type="submit">Apply cohort</button>
+          </div>
+          <div class="ward-cohort-field">
+            <span class="small muted ward-cohort-button-label" aria-hidden="true">&nbsp;</span>
+            <input type="hidden" name="selected_bed" id="inp-selected-bed" value="{{ selected_bed_idx }}" />
+            <button type="submit">Apply cohort</button>
+          </div>
         </div>
       </form>
-      <p class="small muted" style="margin-top:10px;">
-        The <strong>{{ primary_model_id }}</strong> model is the product default (interpretable linear risk + calibrated probabilities).
-        Other trained models are included only for offline validation and benchmarking—switch above, then <strong>Apply cohort</strong>, to compare.
-        Beds cycle demo scenarios (stable → hypotension → decline → shock) so you always see a spread of risk levels.
-        Telemetry below advances on a timer to mimic streaming monitors; explanations refresh for the selected bay.
-      </p>
     </div>
 
     <div class="panel">
       <h3>ICU room layout</h3>
       <p class="small muted" style="margin-bottom:8px;">Click a bay to open the detail monitor. Vitals stream continuously on each tile.</p>
-      {% set nbeds = bed_summaries|length %}
-      {% set mid = (nbeds + 1) // 2 %}
+      <div class="ward-toolbar">
+        <label>
+          Sort
+          <select id="ward-sort" aria-label="Sort beds">
+            <option value="attention" selected>Needs attention (risk)</option>
+            <option value="bed">Bed number</option>
+          </select>
+        </label>
+        <label>
+          Show
+          <select id="ward-filter" aria-label="Filter beds by tier">
+            <option value="all" selected>All beds</option>
+            <option value="elevated">Elevated+ (moderate and above)</option>
+            <option value="high">High risk and above</option>
+            <option value="critical">Critical only</option>
+          </select>
+        </label>
+      </div>
+      <div id="ward-summary" class="ward-summary" aria-live="polite"></div>
       <div class="ward-room" id="ward-room" role="group" aria-label="Simulated ICU bed layout">
-        <div class="ward-label">Head wall</div>
-        <div class="ward-row">
-          {% for bed in bed_summaries[0:mid] %}
+        <div class="ward-row" id="ward-beds">
+          {% for bed in bed_summaries %}
           <div
             class="bed-bay{% if bed.bed_idx == selected_bed_idx %} selected{% endif %}"
             tabindex="0"
@@ -300,32 +748,8 @@
               <div class="bed-risk-num tier-{{ bed.tier }} v-risk">…</div>
               <div class="bed-tier tier-{{ bed.tier }} v-tier">{{ bed.tier|upper }}</div>
             </div>
-          </div>
-          {% endfor %}
-        </div>
-        <div class="ward-aisle">Staff aisle · simulated corridor</div>
-        <div class="ward-label">Foot wall</div>
-        <div class="ward-row">
-          {% for bed in bed_summaries[mid:] %}
-          <div
-            class="bed-bay{% if bed.bed_idx == selected_bed_idx %} selected{% endif %}"
-            tabindex="0"
-            role="button"
-            data-bed="{{ bed.bed_idx }}"
-            aria-pressed="{% if bed.bed_idx == selected_bed_idx %}true{% else %}false{% endif %}"
-          >
-            <span class="live-pill">LIVE</span>
-            <h4>{{ bed.bed_label }}</h4>
-            <div class="patient-id">{{ bed.patient_label }} · stay {{ bed.stay_id }}</div>
-            <div class="bed-vitals">
-              <div><span>MAP</span><strong class="v-map">—</strong></div>
-              <div><span>HR</span><strong class="v-hr">—</strong></div>
-              <div><span>RR</span><strong class="v-rr">—</strong></div>
-            </div>
-            <div class="bed-risk-row">
-              <div class="bed-risk-num tier-{{ bed.tier }} v-risk">…</div>
-              <div class="bed-tier tier-{{ bed.tier }} v-tier">{{ bed.tier|upper }}</div>
-            </div>
+            <div class="bed-clinical-badges clinical-badges" aria-label="Clinical alerts"></div>
+            <div class="bed-risk-delta" aria-live="polite"></div>
           </div>
           {% endfor %}
         </div>
@@ -337,16 +761,38 @@
         <h3 style="margin:0;">Selected bay</h3>
         <p class="small muted" id="detail-meta" style="margin:0;">
           {{ selected_bed_row.bed_label }} · {{ selected_bed_row.patient_label }} ·
-          age {{ age }} · {{ sex }} · {{ scenario_name }} · model <strong>{{ risk_model_id }}</strong>
+          age {{ age }} · {{ sex }} · {{ scenario_name }} · scoring <strong>{{ primary_model_id }}</strong>
         </p>
       </div>
-      {% if not risk_model_is_primary %}
-      <p class="small muted" style="margin:0 0 12px;padding:10px 12px;border-radius:10px;border:1px solid #854d0e;background:rgba(245,158,11,0.08);">
-        <strong>Comparison mode:</strong> scores use <strong>{{ risk_model }}</strong>.
-        Product messaging and coefficient-style explanations are aligned with the primary model (<strong>{{ primary_model_id }}</strong>).
-      </p>
-      {% endif %}
-
+      <div class="patient-clinical-card" id="detail-patient-card" aria-label="Admission demographics and allergy snapshot">
+        <div class="pc-title">Admission snapshot</div>
+        <div class="pc-grid">
+          <div>
+            <span class="pc-label">Patient</span>
+            <div id="detail-pc-name" class="pc-value">{{ patient_card.display_name }}</div>
+          </div>
+          <div>
+            <span class="pc-label">MRN</span>
+            <div id="detail-pc-mrn" class="pc-value">{{ patient_card.mrn }}</div>
+          </div>
+          <div>
+            <span class="pc-label">Blood type</span>
+            <div id="detail-pc-blood" class="pc-value">{{ patient_card.blood_type }}</div>
+          </div>
+          <div>
+            <span class="pc-label">Code status</span>
+            <div id="detail-pc-code" class="pc-value">{{ patient_card.code_status }}</div>
+          </div>
+          <div class="pc-span-2">
+            <span class="pc-label">Admission indication</span>
+            <div id="detail-pc-admission" class="pc-value" style="font-weight:500">{{ patient_card.admission_reason }}</div>
+          </div>
+          <div class="pc-span-2">
+            <span class="pc-label">Drug allergies</span>
+            <div id="detail-pc-allergies" class="pc-value" style="font-weight:500">{{ patient_card.allergies }}</div>
+          </div>
+        </div>
+      </div>
       <p class="tier-{{ tier }} risk-giant" id="detail-risk-big">
         <span id="detail-risk-num">{{ risk_now_score }}</span><span class="muted" style="font-size:26px;font-weight:600">/100</span>
       </p>
@@ -355,17 +801,84 @@
         Raw probability at this timestep ≈ <span id="detail-risk-prob">{{ "%.3f"|format(risk_now_prob) }}</span>.
       </p>
       <p class="tier-{{ tier }}" id="detail-tier-line">Tier: <strong id="detail-tier">{{ tier|upper }}</strong></p>
+      <div id="detail-clinical-badges" class="clinical-badges" aria-label="Clinical alerts"></div>
 
-      <h4 class="small muted" style="margin-top:14px;margin-bottom:6px;">Risk trend (elapsed simulated stay)</h4>
-      <svg class="chart-svg" id="detail-risk-svg" viewBox="0 0 280 90" preserveAspectRatio="xMinYMid meet" role="img" aria-label="Risk score over simulated time">
-        <rect x="0" y="0" width="280" height="90" fill="#0f131a" rx="8" />
-        <line x1="0" y1="88" x2="280" y2="88" stroke="#2a3142" stroke-width="1" />
-        <text x="6" y="14" fill="#64748b" font-size="11">100</text>
-        <text x="6" y="82" fill="#64748b" font-size="11">0</text>
-        <polyline id="detail-risk-poly" fill="none" stroke="#ff1493" stroke-width="2" points="" />
-      </svg>
+      <div id="chart-sync-zone">
+      <div class="chart-risk-row">
+        <h4 class="small muted">Risk trend</h4>
+        <label class="chart-risk-view">
+          <span>Risk chart</span>
+          <select id="risk-chart-view" aria-label="Risk chart display">
+            <option value="both" selected>Both models</option>
+            {% for opt in model_options %}
+            <option value="{{ opt }}">{{ opt }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <div class="chart-stack">
+        <div class="chart-svg-frame">
+        <svg id="detail-risk-svg" viewBox="0 0 400 215" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Risk score over simulated time">
+          <rect x="0" y="0" width="400" height="215" fill="#0f131a" rx="8" />
+          <text class="chart-axis-title" x="40" y="16">Risk (0–100)</text>
+          <line x1="40" y1="28" x2="40" y2="188" stroke="#334155" stroke-width="1" />
+          <line x1="40" y1="188" x2="360" y2="188" stroke="#334155" stroke-width="1" />
+          <text class="chart-axis-label" x="34" y="32" text-anchor="end">100</text>
+          <text class="chart-axis-label" x="34" y="72" text-anchor="end">75</text>
+          <text class="chart-axis-label" x="34" y="112" text-anchor="end">50</text>
+          <text class="chart-axis-label" x="34" y="152" text-anchor="end">25</text>
+          <text class="chart-axis-label" x="34" y="192" text-anchor="end">0</text>
+          {% for opt in model_options %}
+          <polyline id="detail-risk-poly-{{ opt }}" class="chart-risk-poly--{{ opt }}" points="" pointer-events="none" />
+          <circle id="detail-risk-dot-{{ opt }}" class="chart-hover-dot--{{ opt }}" r="3.5" visibility="hidden" />
+          {% endfor %}
+          <line id="detail-risk-crosshair" class="chart-crosshair" x1="200" y1="28" x2="200" y2="188" visibility="hidden" />
+          <rect class="chart-hit" id="detail-risk-hit" x="0" y="0" width="400" height="215" fill="transparent" />
+        </svg>
+        </div>
+      </div>
 
-      <div class="grid-3" style="margin-top:12px;">
+      <h4 class="small muted" style="margin-top:12px;margin-bottom:4px;">Mean arterial pressure</h4>
+      <div class="chart-stack">
+        <div class="chart-svg-frame">
+        <svg id="detail-map-spark" viewBox="0 0 400 215" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <rect x="0" y="0" width="400" height="215" fill="#0f131a" rx="8" />
+          <text class="chart-axis-title" x="40" y="16">MAP (mmHg)</text>
+          <line x1="40" y1="28" x2="40" y2="188" stroke="#334155" stroke-width="1" />
+          <line x1="40" y1="188" x2="360" y2="188" stroke="#334155" stroke-width="1" />
+          <text class="chart-axis-label" id="map-yl-top" x="34" y="42" text-anchor="end"></text>
+          <text class="chart-axis-label" id="map-yl-mid" x="34" y="112" text-anchor="end"></text>
+          <text class="chart-axis-label" id="map-yl-bot" x="34" y="182" text-anchor="end"></text>
+          <line id="detail-map-threshold" class="chart-map-threshold" x1="40" y1="100" x2="360" y2="100" visibility="hidden" />
+          <polyline id="detail-map-poly" class="chart-vital-poly--map" points="" pointer-events="none" />
+          <line id="detail-map-crosshair" class="chart-crosshair" x1="200" y1="28" x2="200" y2="188" visibility="hidden" />
+          <circle id="detail-map-dot" class="chart-hover-dot" r="3.5" visibility="hidden" />
+          <rect class="chart-hit" id="detail-map-hit" x="0" y="0" width="400" height="215" fill="transparent" />
+        </svg>
+        </div>
+      </div>
+
+      <h4 class="small muted" style="margin-top:12px;margin-bottom:4px;">Heart rate</h4>
+      <div class="chart-stack">
+        <div class="chart-svg-frame">
+        <svg id="detail-hr-spark" viewBox="0 0 400 215" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <rect x="0" y="0" width="400" height="215" fill="#0f131a" rx="8" />
+          <text class="chart-axis-title" x="40" y="16">HR (bpm)</text>
+          <line x1="40" y1="28" x2="40" y2="188" stroke="#334155" stroke-width="1" />
+          <line x1="40" y1="188" x2="360" y2="188" stroke="#334155" stroke-width="1" />
+          <text class="chart-axis-label" id="hr-yl-top" x="34" y="42" text-anchor="end"></text>
+          <text class="chart-axis-label" id="hr-yl-mid" x="34" y="112" text-anchor="end"></text>
+          <text class="chart-axis-label" id="hr-yl-bot" x="34" y="182" text-anchor="end"></text>
+          <line id="detail-hr-threshold" class="chart-map-threshold" x1="40" y1="100" x2="360" y2="100" visibility="hidden" />
+          <polyline id="detail-hr-poly" fill="none" stroke="#94a3b8" stroke-width="1.5" points="" pointer-events="none" />
+          <line id="detail-hr-crosshair" class="chart-crosshair" x1="200" y1="28" x2="200" y2="188" visibility="hidden" />
+          <circle id="detail-hr-dot" class="chart-hover-dot" r="3.5" visibility="hidden" />
+          <rect class="chart-hit" id="detail-hr-hit" x="0" y="0" width="400" height="215" fill="transparent" />
+        </svg>
+        </div>
+      </div>
+
+      <div class="grid-3 chart-sync-metrics" style="margin-top:16px;">
         <div class="metric">
           <div class="label">MAP</div>
           <div class="value" id="detail-map">{{ "%.0f"|format(last_vitals.map) }} mmHg</div>
@@ -380,31 +893,50 @@
         </div>
       </div>
 
-      <div class="spark">
-        <h4>Heart rate trace (recent window)</h4>
-        <svg class="mini-spark-svg" id="detail-hr-spark" viewBox="0 0 280 44" preserveAspectRatio="none" aria-hidden="true">
-          <rect width="280" height="44" fill="#0f131a" rx="6" />
-          <polyline id="detail-hr-poly" fill="none" stroke="#94a3b8" stroke-width="1.5" points="" />
-        </svg>
+      <div class="grid-3 chart-sync-metrics monitor-strip" style="margin-top:12px;">
+        <div class="metric">
+          <div class="label">SpO₂ (pulse ox)</div>
+          <div class="value" id="detail-spo2">{{ "%.0f"|format(last_vitals.spo2) }}%</div>
+        </div>
+        <div class="metric">
+          <div class="label">Respiratory rate</div>
+          <div class="value" id="detail-rr-monitor">{{ "%.0f"|format(last_vitals.rr) }} /min</div>
+        </div>
+        <div class="metric">
+          <div class="label">Temperature</div>
+          <div class="value" id="detail-temp">{{ "%.1f"|format(last_vitals.temp_c) }} °C</div>
+        </div>
+      </div>
       </div>
 
-      <div style="margin-top:16px;">
-        <h3 style="margin-bottom:8px;">Explanations</h3>
-        <p><strong>Clinical vitals</strong> (prefix up to this timestep)</p>
-        <ul id="detail-clinical">{% for line in clinical_explanations %}<li>{{ line }}</li>{% endfor %}</ul>
-        <p><strong>Risk contributors</strong> (model at this timestep)</p>
-        <ul id="detail-model">{% for line in model_explanations %}<li>{{ line }}</li>{% endfor %}</ul>
-      </div>
+      <div id="chart-sync-tooltip" aria-live="polite"></div>
 
-      <div style="margin-top:16px;">
-        <h3 style="margin-bottom:8px;">Data analysis</h3>
-        <p class="small muted" id="detail-analysis">
-          The deterioration model ingests rolling hemodynamic statistics (MAP / HR / RR trends, variability, and hypotension burden)
-          aligned to your training configuration, then outputs a calibrated probability mapped to a 0–100 score with tier cutoffs from
-          <code>risk_display.tiers</code> in <code>config.yaml</code>. Use the cohort seed and model selector above to stress different
-          synthetic patients; each bay replays a full simulated stay on a loop so you can watch risk evolve as vitals stream.
+      <div id="detail-risk-log-section" class="risk-log-panel">
+        <div class="risk-log-header">
+          <h3>Elevated risk log</h3>
+          <span id="detail-risk-log-badge" class="risk-log-badge risk-log-badge--ok" hidden>—</span>
+        </div>
+        <p class="small muted" style="margin:6px 0 10px;">
+          Primary model (<strong>{{ primary_model_id }}</strong>): each row is a timestep scored high or critical (may include transient spikes).
         </p>
+        <div id="detail-risk-log-banner" class="risk-log-banner" hidden role="alert">
+          Unacknowledged elevated-risk readings remain for this patient — please review and acknowledge below.
+        </div>
+        <div class="risk-log-toolbar">
+          <span id="detail-risk-log-total" class="risk-log-total-count" aria-live="polite"></span>
+          <button type="button" id="btn-risk-log-ack-all" class="risk-log-ack-all-btn">
+            Acknowledge all
+          </button>
+        </div>
+        <div id="detail-risk-log-scroll" class="risk-log-scroll">
+          <div id="detail-risk-log-list" role="list"></div>
+        </div>
+        <div class="export-actions">
+          <button type="button" id="btn-export-current-patient">Export this patient (CSV)</button>
+          <button type="button" id="btn-export-all-patients">Export all patients (CSV)</button>
+        </div>
       </div>
+
     </div>
   </div>
 
@@ -413,12 +945,278 @@
     (function () {
       const elJson = document.getElementById("ward-data");
       const STREAMS = JSON.parse(elJson.textContent || "[]");
-      const TICK_MS = 2400;
+      const TICK_MS = 5000;
       let tick = 0;
       let selectedBed = {{ selected_bed_idx|int }};
       const seed = {{ seed|int }};
       const bedCount = {{ bed_count|int }};
-      const riskModel = {{ risk_model|tojson }};
+      const MODEL_IDS = {{ model_options|tojson }};
+      const primaryModelId = {{ primary_model_id|tojson }};
+      let riskChartView = "both";
+
+      const CLINICAL = {{ clinical_thresholds|tojson }};
+      const TIER_RANK = { critical: 0, high: 1, moderate: 2, low: 3 };
+      let wardSortMode = "attention";
+      let wardFilterMode = "all";
+      const prevRiskByBed = {};
+      var riskLogScrollBed = null;
+
+      function tierRank(tier) {
+        return TIER_RANK[tier] != null ? TIER_RANK[tier] : 9;
+      }
+
+      function shockIndex(map, hr) {
+        if (map == null || hr == null || map <= 0) return null;
+        return hr / map;
+      }
+
+      function escHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      /** Short vitals-based line for elevated-risk log rows (uses STREAMS at stream_index). */
+      function elevatedRiskVitalExplanation(bedIdx, streamIndex) {
+        var s = streamFor(bedIdx);
+        if (!s || !s.length) return "No vitals stream for this bay.";
+        var pt = s[streamIndex];
+        if (!pt) return "Vitals missing at this timestep.";
+        var prev = streamIndex > 0 ? s[streamIndex - 1] : null;
+
+        var map = pt.map != null ? Number(pt.map) : NaN;
+        var hr = pt.hr != null ? Number(pt.hr) : NaN;
+        var rr = pt.rr != null ? Number(pt.rr) : NaN;
+        var spo2 = pt.spo2 != null ? Number(pt.spo2) : NaN;
+        var tempC = pt.temp_c != null ? Number(pt.temp_c) : NaN;
+
+        var parts = [];
+        var mapLow = CLINICAL.map_low_mmhg;
+
+        if (Number.isFinite(map)) {
+          if (map < mapLow) {
+            parts.push("MAP " + Math.round(map) + " mmHg (below " + Math.round(mapLow) + ")");
+          } else if (
+            prev &&
+            prev.map != null &&
+            Number.isFinite(Number(prev.map)) &&
+            map <= Number(prev.map) - 8
+          ) {
+            parts.push(
+              "MAP fell to " +
+                Math.round(map) +
+                " mmHg (−" +
+                Math.round(Number(prev.map) - map) +
+                " vs prior step)"
+            );
+          }
+        }
+
+        if (Number.isFinite(hr) && hr > CLINICAL.hr_high_bpm) {
+          parts.push("HR " + Math.round(hr) + " bpm (above " + Math.round(CLINICAL.hr_high_bpm) + ")");
+        }
+
+        if (Number.isFinite(rr)) {
+          if (rr < CLINICAL.rr_low_per_min) {
+            parts.push("RR " + Math.round(rr) + "/min (below " + Math.round(CLINICAL.rr_low_per_min) + ")");
+          } else if (rr > CLINICAL.rr_high_per_min) {
+            parts.push("RR " + Math.round(rr) + "/min (above " + Math.round(CLINICAL.rr_high_per_min) + ")");
+          }
+        }
+
+        var si = shockIndex(map, hr);
+        if (si != null && si >= CLINICAL.shock_index_high) {
+          parts.push("Shock index " + si.toFixed(2) + " (≥" + CLINICAL.shock_index_high + ")");
+        }
+
+        if (Number.isFinite(spo2) && spo2 < 92) {
+          parts.push("SpO₂ " + Math.round(spo2) + "%");
+        }
+
+        if (Number.isFinite(tempC) && (tempC >= 38.3 || tempC <= 35.5)) {
+          parts.push("Temp " + tempC.toFixed(1) + " °C");
+        }
+
+        if (parts.length > 3) parts = parts.slice(0, 3);
+
+        if (parts.length) return parts.join(" · ");
+
+        var snap = [];
+        if (Number.isFinite(map)) snap.push("MAP " + Math.round(map) + " mmHg");
+        if (Number.isFinite(hr)) snap.push("HR " + Math.round(hr) + " bpm");
+        if (Number.isFinite(rr)) snap.push("RR " + Math.round(rr) + "/min");
+        if (Number.isFinite(spo2)) snap.push("SpO₂ " + Math.round(spo2) + "%");
+        if (snap.length) return snap.join(" · ");
+
+        return "Pattern at this timestep is discordant with vitals alone; correlate clinically.";
+      }
+
+      function clinicalFlags(fr) {
+        var flags = [];
+        if (!fr) return flags;
+        var map = Number(fr.map);
+        var hr = Number(fr.hr);
+        var rr = Number(fr.rr);
+        if (map < CLINICAL.map_low_mmhg) {
+          flags.push({ id: "map", label: "MAP < " + Math.round(CLINICAL.map_low_mmhg), level: "alert" });
+        }
+        if (hr > CLINICAL.hr_high_bpm) {
+          flags.push({ id: "hr", label: "HR > " + Math.round(CLINICAL.hr_high_bpm), level: "warn" });
+        }
+        if (rr < CLINICAL.rr_low_per_min) {
+          flags.push({ id: "rr-low", label: "RR < " + Math.round(CLINICAL.rr_low_per_min), level: "warn" });
+        } else if (rr > CLINICAL.rr_high_per_min) {
+          flags.push({ id: "rr-high", label: "RR > " + Math.round(CLINICAL.rr_high_per_min), level: "warn" });
+        }
+        var si = shockIndex(map, hr);
+        if (si != null && si >= CLINICAL.shock_index_high) {
+          flags.push({ id: "si", label: "SI " + si.toFixed(2) + " ≥ " + CLINICAL.shock_index_high, level: "alert" });
+        }
+        return flags;
+      }
+
+      function paintPatientDemographics(bedIdx) {
+        var b = STREAMS[bedIdx];
+        var card = b && b.patient_card ? b.patient_card : {};
+        function setPc(id, v) {
+          var el = document.getElementById(id);
+          if (el) el.textContent = v != null && v !== "" ? String(v) : "—";
+        }
+        setPc("detail-pc-name", card.display_name);
+        setPc("detail-pc-mrn", card.mrn);
+        setPc("detail-pc-blood", card.blood_type);
+        setPc("detail-pc-code", card.code_status);
+        setPc("detail-pc-admission", card.admission_reason);
+        setPc("detail-pc-allergies", card.allergies);
+      }
+
+      function updateBedsideMonitors(pt) {
+        if (!pt) return;
+        var spo2El = document.getElementById("detail-spo2");
+        if (spo2El) {
+          var sx = pt.spo2 != null ? Number(pt.spo2) : NaN;
+          spo2El.textContent = Number.isFinite(sx) ? Math.round(sx) + "%" : "—";
+        }
+        var rrM = document.getElementById("detail-rr-monitor");
+        if (rrM && pt.rr != null && Number.isFinite(Number(pt.rr))) {
+          rrM.textContent = Math.round(Number(pt.rr)) + " /min";
+        }
+        var tEl = document.getElementById("detail-temp");
+        if (tEl) {
+          var tc = pt.temp_c != null ? Number(pt.temp_c) : NaN;
+          tEl.textContent = Number.isFinite(tc) ? tc.toFixed(1) + " °C" : "—";
+        }
+      }
+
+      function renderClinicalBadges(container, flags) {
+        if (!container) return;
+        if (!flags.length) {
+          container.innerHTML = "";
+          return;
+        }
+        container.innerHTML = flags
+          .map(function (f) {
+            var cls = f.level === "alert" ? "clinical-badge--alert" : "clinical-badge--warn";
+            return '<span class="clinical-badge ' + cls + '">' + f.label + "</span>";
+          })
+          .join("");
+      }
+
+      function riskLookbackSteps() {
+        var gm = CLINICAL.grid_minutes || 5;
+        var mins = CLINICAL.risk_delta_lookback_minutes || 15;
+        return Math.max(1, Math.round(mins / gm));
+      }
+
+      function riskDeltaForBed(bedIdx, fr) {
+        var s = streamFor(bedIdx);
+        if (!fr || !s.length) return { text: "", cls: "" };
+        var step = frameIndex(bedIdx);
+        var back = Math.max(0, step - riskLookbackSteps());
+        var prev = s[back];
+        if (!prev || prev.risk_score == null) return { text: "", cls: "" };
+        var delta = Number(fr.risk_score) - Number(prev.risk_score);
+        var minPts = CLINICAL.risk_delta_min_points || 5;
+        if (Math.abs(delta) < minPts) return { text: "", cls: "" };
+        var mins = (step - back) * (CLINICAL.grid_minutes || 5);
+        var arrow = delta > 0 ? "↑" : "↓";
+        return {
+          text: arrow + Math.abs(Math.round(delta)) + " pts / " + mins + "m",
+          cls: delta > 0 ? "rising" : "falling",
+        };
+      }
+
+      function passesWardFilter(tier) {
+        if (wardFilterMode === "all") return true;
+        if (wardFilterMode === "critical") return tier === "critical";
+        if (wardFilterMode === "high") return tier === "critical" || tier === "high";
+        if (wardFilterMode === "elevated") {
+          return tier === "critical" || tier === "high" || tier === "moderate";
+        }
+        return true;
+      }
+
+      function compareBedBays(a, b) {
+        var ia = parseInt(a.getAttribute("data-bed"), 10);
+        var ib = parseInt(b.getAttribute("data-bed"), 10);
+        var fa = currentFrame(ia);
+        var fb = currentFrame(ib);
+        if (wardSortMode === "bed") return ia - ib;
+        var ta = tierRank(fa && fa.tier);
+        var tb = tierRank(fb && fb.tier);
+        if (ta !== tb) return ta - tb;
+        var ra = fa ? Number(fa.risk_score) : 0;
+        var rb = fb ? Number(fb.risk_score) : 0;
+        if (rb !== ra) return rb - ra;
+        return ia - ib;
+      }
+
+      function layoutWardBays() {
+        var grid = document.getElementById("ward-beds");
+        if (!grid) return;
+        var bays = Array.from(document.querySelectorAll(".bed-bay"));
+        bays.sort(compareBedBays);
+        var frag = document.createDocumentFragment();
+        bays.forEach(function (el) {
+          frag.appendChild(el);
+        });
+        grid.appendChild(frag);
+      }
+
+      function updateWardSummary() {
+        var el = document.getElementById("ward-summary");
+        if (!el) return;
+        var counts = { critical: 0, high: 0, moderate: 0, low: 0 };
+        for (var i = 0; i < STREAMS.length; i++) {
+          var fr = currentFrame(i);
+          if (!fr) continue;
+          var t = fr.tier || "low";
+          if (counts[t] == null) counts[t] = 0;
+          counts[t] += 1;
+        }
+        var parts = [
+          { key: "critical", label: "Critical", cls: "tier-critical" },
+          { key: "high", label: "High", cls: "tier-high" },
+          { key: "moderate", label: "Moderate", cls: "tier-moderate" },
+          { key: "low", label: "Low", cls: "tier-low" },
+        ];
+        el.innerHTML = parts
+          .map(function (p) {
+            return (
+              '<div class="sum-item ' +
+              p.cls +
+              '"><span class="sum-count">' +
+              (counts[p.key] || 0) +
+              '</span><span class="sum-label">' +
+              p.label +
+              "</span></div>"
+            );
+          })
+          .join('<span class="muted" style="opacity:0.35"> · </span>');
+      }
+
 
       function streamFor(bedIdx) {
         const b = STREAMS[bedIdx];
@@ -441,6 +1239,413 @@
         return "tier-" + tier;
       }
 
+      var RISK_ACK_STORAGE_KEY = "icuMonitor_riskAcks_v2";
+
+      function riskAckNamespace() {
+        return String(seed) + "_" + String(bedCount);
+      }
+
+      function loadRiskAckRoot() {
+        try {
+          var raw = localStorage.getItem(RISK_ACK_STORAGE_KEY);
+          if (!raw) return {};
+          var o = JSON.parse(raw);
+          return o && typeof o === "object" ? o : {};
+        } catch (e) {
+          return {};
+        }
+      }
+
+      function loadRiskAckMap() {
+        var root = loadRiskAckRoot();
+        var ns = riskAckNamespace();
+        var m = root[ns];
+        return m && typeof m === "object" ? m : {};
+      }
+
+      function saveRiskAckMap(map) {
+        try {
+          var root = loadRiskAckRoot();
+          root[riskAckNamespace()] = map;
+          localStorage.setItem(RISK_ACK_STORAGE_KEY, JSON.stringify(root));
+        } catch (e) {}
+      }
+
+      /** One event per bed row; cohort isolation via saveRiskAckMap namespace. */
+      function riskAckKey(bedIdx, streamIndex) {
+        return String(bedIdx) + "|" + String(streamIndex);
+      }
+
+      function clearRiskAcksForCohort(targetSeed, targetBedCount) {
+        try {
+          var root = loadRiskAckRoot();
+          var ns = String(targetSeed) + "_" + String(targetBedCount);
+          delete root[ns];
+          localStorage.setItem(RISK_ACK_STORAGE_KEY, JSON.stringify(root));
+        } catch (e) {}
+      }
+
+      function computeElevatedRiskEvents(stream) {
+        var out = [];
+        if (!stream || !stream.length) return out;
+        for (var i = 0; i < stream.length; i++) {
+          var t = String(stream[i].tier || "")
+            .toLowerCase()
+            .trim();
+          if (t !== "high" && t !== "critical") continue;
+          out.push({
+            stream_index: i,
+            charttime: stream[i].charttime || "",
+            risk_score: Number(stream[i].risk_score) || 0,
+            tier: t,
+          });
+        }
+        return out;
+      }
+
+      function elevatedRiskEventsAll(bedIdx) {
+        var b = STREAMS[bedIdx];
+        if (!b || !b.stream) return [];
+        if (Array.isArray(b.elevated_risk_events)) return b.elevated_risk_events;
+        return computeElevatedRiskEvents(b.stream);
+      }
+
+      /** Only events elapsed in the current replay (synced global tick / per-bed frame index). */
+      function elevatedRiskEventsSoFar(bedIdx) {
+        var step = frameIndex(bedIdx);
+        return elevatedRiskEventsAll(bedIdx).filter(function (e) {
+          return (e.stream_index || 0) <= step;
+        });
+      }
+
+      function acknowledgeAllRiskForBed(bedIdx) {
+        var events = elevatedRiskEventsSoFar(bedIdx);
+        if (!events.length) return;
+        var m = loadRiskAckMap();
+        var stamp = new Date().toISOString();
+        events.forEach(function (ev) {
+          m[riskAckKey(bedIdx, ev.stream_index)] = { at: stamp, bulk: true };
+        });
+        saveRiskAckMap(m);
+        renderRiskAlertLog(bedIdx);
+      }
+
+      /** Elevated-risk log toolbar: counts for replay so far, tier-colored figures. */
+      function riskLogTotalCountsHtml(nHigh, nCrit) {
+        var h = Math.max(0, Math.floor(Number(nHigh) || 0));
+        var c = Math.max(0, Math.floor(Number(nCrit) || 0));
+        var hLbl = h === 1 ? "high log" : "high logs";
+        var cLbl = c === 1 ? "critical log" : "critical logs";
+        return (
+          '<span class="risk-log-total-num tier-high">' +
+          String(h) +
+          "</span> " +
+          hLbl +
+          ', <span class="risk-log-total-num tier-critical">' +
+          String(c) +
+          "</span> " +
+          cLbl
+        );
+      }
+
+      function renderRiskAlertLog(bedIdx) {
+        var scrollEl = document.getElementById("detail-risk-log-scroll");
+        var wrap = document.getElementById("detail-risk-log-list");
+        var banner = document.getElementById("detail-risk-log-banner");
+        var pill = document.getElementById("detail-risk-log-badge");
+        var ackAllBtn = document.getElementById("btn-risk-log-ack-all");
+        var totalEl = document.getElementById("detail-risk-log-total");
+        if (!wrap) return;
+
+        var oldScrollTop = scrollEl ? scrollEl.scrollTop : 0;
+        var oldScrollHeight = scrollEl ? scrollEl.scrollHeight : 0;
+        var isNewBed = riskLogScrollBed !== bedIdx;
+
+        var allTime = elevatedRiskEventsAll(bedIdx);
+        var events = elevatedRiskEventsSoFar(bedIdx).slice();
+        var nHigh = 0;
+        var nCrit = 0;
+        for (var ei = 0; ei < events.length; ei++) {
+          var tt = String(events[ei].tier || "")
+            .toLowerCase()
+            .trim();
+          if (tt === "high") nHigh += 1;
+          else if (tt === "critical") nCrit += 1;
+        }
+        if (totalEl) {
+          totalEl.innerHTML = riskLogTotalCountsHtml(nHigh, nCrit);
+        }
+        events.sort(function (a, b) {
+          return (a.stream_index || 0) - (b.stream_index || 0);
+        });
+        var ackMap = loadRiskAckMap();
+        var pending = 0;
+        if (!events.length) {
+          if (allTime.length) {
+            wrap.innerHTML =
+              '<p class="small muted" style="margin:0">' +
+              "No elevated readings in this replay yet — they will appear here as simulated time advances.</p>";
+          } else {
+            wrap.innerHTML =
+              '<p class="small muted" style="margin:0">' +
+              "No primary-model high or critical readings in this patient’s full timeline.</p>";
+          }
+          if (scrollEl) scrollEl.scrollTop = 0;
+          if (pill) {
+            pill.textContent = "No events yet";
+            pill.className = "risk-log-badge risk-log-badge--ok";
+            pill.hidden = false;
+          }
+          if (banner) banner.hidden = true;
+          if (ackAllBtn) ackAllBtn.disabled = true;
+          riskLogScrollBed = bedIdx;
+          return;
+        }
+        wrap.innerHTML = events
+          .map(function (ev) {
+            var sid = ev.stream_index;
+            var ak = riskAckKey(bedIdx, sid);
+            var acked = !!ackMap[ak];
+            if (!acked) pending += 1;
+            var rowCls =
+              "risk-log-item" +
+              (acked ? " risk-log-item--acked" : " risk-log-item--pending");
+            var tierLabel = String(ev.tier || "").toUpperCase();
+            var explainRaw = elevatedRiskVitalExplanation(bedIdx, sid);
+            var explain = escHtml(explainRaw);
+            var btnOrTag = acked
+              ? '<span class="risk-log-acked-tag">Acknowledged</span>'
+              : '<button type="button" class="risk-log-ack-btn" data-risk-ack="1" data-bed="' +
+                bedIdx +
+                '" data-idx="' +
+                sid +
+                '">Acknowledge</button>';
+            return (
+              '<div class="' +
+              rowCls +
+              '" role="listitem">' +
+              '<div class="risk-log-leading">' +
+              '<span class="muted" style="font-variant-numeric:tabular-nums">' +
+              (ev.charttime || "—") +
+              "</span>" +
+              '<span class="risk-log-score tier-' +
+              String(ev.tier || "high") +
+              '">' +
+              ev.risk_score +
+              "/100</span>" +
+              '<span class="muted">' +
+              tierLabel +
+              "</span></div>" +
+              '<span class="risk-log-explain" title="' +
+              explain +
+              '">' +
+              explain +
+              "</span>" +
+              btnOrTag +
+              "</div>"
+            );
+          })
+          .join("");
+        if (ackAllBtn) {
+          ackAllBtn.disabled = pending === 0;
+        }
+        if (pill) {
+          pill.hidden = false;
+          if (pending > 0) {
+            pill.textContent =
+              pending + " pending acknowledgement" + (pending === 1 ? "" : "s");
+            pill.className = "risk-log-badge risk-log-badge--alert";
+          } else {
+            pill.textContent = "All acknowledged";
+            pill.className = "risk-log-badge risk-log-badge--ok";
+          }
+        }
+        if (banner) banner.hidden = pending === 0;
+
+        riskLogScrollBed = bedIdx;
+
+        requestAnimationFrame(function () {
+          if (!scrollEl) return;
+          if (isNewBed) {
+            scrollEl.scrollTop = scrollEl.scrollHeight;
+            return;
+          }
+          var dh = scrollEl.scrollHeight - oldScrollHeight;
+          scrollEl.scrollTop = Math.max(0, oldScrollTop + dh);
+        });
+      }
+
+      function csvEscape(cell) {
+        if (cell == null || cell === undefined) return "";
+        var s = String(cell);
+        if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+      }
+
+      function patientSnapshotFields(b) {
+        var pc = (b && b.patient_card) || {};
+        return {
+          cohort_seed: seed,
+          bed_idx: b.bed_idx,
+          bed_label: b.bed_label || "",
+          patient_label: b.patient_label || "",
+          stay_id: b.stay_id,
+          age: b.age,
+          sex: b.sex,
+          scenario_name: b.scenario_name || "",
+          primary_model: primaryModelId,
+          patient_display_name: pc.display_name || "",
+          mrn: pc.mrn || "",
+          blood_type: pc.blood_type || "",
+          allergies: pc.allergies || "",
+          admission_reason: pc.admission_reason || "",
+          code_status: pc.code_status || "",
+        };
+      }
+
+      function timeseriesCsvHeaderCells() {
+        var base = [
+          "cohort_seed",
+          "bed_idx",
+          "bed_label",
+          "patient_label",
+          "stay_id",
+          "age",
+          "sex",
+          "scenario_name",
+          "primary_model",
+          "patient_display_name",
+          "mrn",
+          "blood_type",
+          "allergies",
+          "admission_reason",
+          "code_status",
+          "timestep_index",
+          "charttime",
+          "map_mmhg",
+          "sbp_mmhg",
+          "hr_bpm",
+          "rr_per_min",
+          "spo2_pct",
+          "temp_c",
+          "risk_score_primary",
+          "tier_primary",
+          "primary_high_or_critical",
+        ];
+        MODEL_IDS.forEach(function (mid) {
+          base.push("risk_score_" + mid);
+          base.push("tier_" + mid);
+        });
+        return base;
+      }
+
+      function csvRowForTimestep(b, idx, pt) {
+        var snap = patientSnapshotFields(b);
+        var tier = String(pt.tier || "")
+          .toLowerCase()
+          .trim();
+        var elev = tier === "high" || tier === "critical" ? "yes" : "no";
+        var vals = [
+          snap.cohort_seed,
+          snap.bed_idx,
+          snap.bed_label,
+          snap.patient_label,
+          snap.stay_id,
+          snap.age,
+          snap.sex,
+          snap.scenario_name,
+          snap.primary_model,
+          snap.patient_display_name,
+          snap.mrn,
+          snap.blood_type,
+          snap.allergies,
+          snap.admission_reason,
+          snap.code_status,
+          idx,
+          pt.charttime,
+          pt.map,
+          pt.sbp,
+          pt.hr,
+          pt.rr,
+          pt.spo2,
+          pt.temp_c,
+          pt.risk_score,
+          pt.tier || "",
+          elev,
+        ];
+        MODEL_IDS.forEach(function (mid) {
+          vals.push(pt["risk_score_" + mid]);
+          vals.push(pt["tier_" + mid]);
+        });
+        return vals.map(csvEscape).join(",");
+      }
+
+      function exportBedsCsv(bedIndices, filename) {
+        var header = timeseriesCsvHeaderCells().map(csvEscape).join(",");
+        var lines = [header];
+        bedIndices.forEach(function (bi) {
+          var b = STREAMS[bi];
+          if (!b || !b.stream) return;
+          b.stream.forEach(function (pt, i) {
+            lines.push(csvRowForTimestep(b, i, pt));
+          });
+        });
+        var blob = "\uFEFF" + lines.join("\r\n");
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([blob], { type: "text/csv;charset=utf-8" }));
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+      }
+
+      function bindRiskLogAndExport() {
+        var list = document.getElementById("detail-risk-log-list");
+        if (list && list.dataset.delegationBound !== "1") {
+          list.dataset.delegationBound = "1";
+          list.addEventListener("click", function (ev) {
+            var btn = ev.target.closest("[data-risk-ack]");
+            if (!btn) return;
+            var bi = parseInt(btn.getAttribute("data-bed"), 10);
+            var sid = parseInt(btn.getAttribute("data-idx"), 10);
+            if (Number.isNaN(bi) || Number.isNaN(sid)) return;
+            var m = loadRiskAckMap();
+            m[riskAckKey(bi, sid)] = { at: new Date().toISOString() };
+            saveRiskAckMap(m);
+            renderRiskAlertLog(selectedBed);
+          });
+        }
+        var b1 = document.getElementById("btn-export-current-patient");
+        if (b1 && b1.dataset.bound !== "1") {
+          b1.dataset.bound = "1";
+          b1.addEventListener("click", function () {
+            var bl = STREAMS[selectedBed] && STREAMS[selectedBed].bed_label;
+            var slug = String(bl || "bed").replace(/\s+/g, "_");
+            exportBedsCsv(
+              [selectedBed],
+              "icu_patient_" + slug + "_seed" + seed + ".csv"
+            );
+          });
+        }
+        var b2 = document.getElementById("btn-export-all-patients");
+        if (b2 && b2.dataset.bound !== "1") {
+          b2.dataset.bound = "1";
+          b2.addEventListener("click", function () {
+            var all = [];
+            for (var i = 0; i < STREAMS.length; i++) all.push(i);
+            exportBedsCsv(all, "icu_all_patients_seed" + seed + "_n" + STREAMS.length + ".csv");
+          });
+        }
+        var ackAll = document.getElementById("btn-risk-log-ack-all");
+        if (ackAll && ackAll.dataset.bound !== "1") {
+          ackAll.dataset.bound = "1";
+          ackAll.addEventListener("click", function () {
+            acknowledgeAllRiskForBed(selectedBed);
+          });
+        }
+      }
+
       function paintBay(el, bedIdx) {
         const fr = currentFrame(bedIdx);
         if (!fr || !el) return;
@@ -458,6 +1663,20 @@
         const tc = tierClass(fr.tier || "low");
         riskEl.classList.add(tc);
         tierEl.classList.add(tc);
+        renderClinicalBadges(el.querySelector(".bed-clinical-badges"), clinicalFlags(fr));
+        var deltaEl = el.querySelector(".bed-risk-delta");
+        if (deltaEl) {
+          var d = riskDeltaForBed(bedIdx, fr);
+          deltaEl.textContent = d.text;
+          deltaEl.className = "bed-risk-delta" + (d.cls ? " " + d.cls : "");
+        }
+        var tier = fr.tier || "low";
+        if (passesWardFilter(tier)) {
+          el.classList.remove("ward-filter-hidden");
+        } else {
+          el.classList.add("ward-filter-hidden");
+        }
+        prevRiskByBed[bedIdx] = Number(fr.risk_score);
       }
 
       function paintAllBays() {
@@ -465,36 +1684,171 @@
           const idx = parseInt(el.getAttribute("data-bed"), 10);
           paintBay(el, idx);
         });
+        layoutWardBays();
+        updateWardSummary();
       }
 
-      function riskPolylineToStep(stream, endInclusive) {
-        const w = 280, h = 88;
-        const end = Math.max(0, Math.min(endInclusive, stream.length - 1));
-        const sub = stream.slice(0, end + 1);
-        const n = sub.length;
+      const CHART_WINDOW_POINTS = 72;
+
+      var CHART_plotL = 40;
+      var CHART_plotW = 320;
+      var RISK_plotT = 28;
+      var RISK_plotB = 188;
+      var HR_plotT = 28;
+      var HR_plotB = 188;
+      var MAP_plotT = 28;
+      var MAP_plotB = 188;
+
+      var chartHover = {
+        sliceStart: 0,
+        sub: [],
+        stream: [],
+        hrMn: 60,
+        hrMx: 120,
+        mapMn: 60,
+        mapMx: 90,
+      };
+      var syncHover = { active: false, localIndex: 0, lastClientX: 0, lastClientY: 0 };
+
+      function computeChartSlice(stream, step) {
+        var end = Math.max(0, Math.min(step, stream.length - 1));
+        var start = Math.max(0, end - CHART_WINDOW_POINTS + 1);
+        return { start: start, end: end, sub: stream.slice(start, end + 1) };
+      }
+
+      function setAxisText(id, val) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = val != null ? String(val) : "";
+      }
+
+      function updateHrYAxisLabels(mn, mx) {
+        setAxisText("hr-yl-top", Math.round(mx));
+        setAxisText("hr-yl-mid", Math.round((mn + mx) / 2));
+        setAxisText("hr-yl-bot", Math.round(mn));
+      }
+
+      function updateMapYAxisLabels(mn, mx) {
+        setAxisText("map-yl-top", Math.round(mx));
+        setAxisText("map-yl-mid", Math.round((mn + mx) / 2));
+        setAxisText("map-yl-bot", Math.round(mn));
+      }
+
+      function updateMapThresholdLine(mn, mx) {
+        var line = document.getElementById("detail-map-threshold");
+        if (!line) return;
+        var thresh = CLINICAL.map_low_mmhg;
+        if (thresh == null || mx - mn < 1e-6 || thresh < mn || thresh > mx) {
+          line.setAttribute("visibility", "hidden");
+          return;
+        }
+        var plotH = MAP_plotB - MAP_plotT;
+        var nr = (thresh - mn) / (mx - mn);
+        var y = MAP_plotB - 3 - nr * (plotH - 6);
+        line.setAttribute("x1", String(CHART_plotL));
+        line.setAttribute("x2", String(CHART_plotL + CHART_plotW));
+        line.setAttribute("y1", y.toFixed(1));
+        line.setAttribute("y2", y.toFixed(1));
+        line.setAttribute("visibility", "visible");
+      }
+
+      function updateHrThresholdLine(mn, mx) {
+        var line = document.getElementById("detail-hr-threshold");
+        if (!line) return;
+        var thresh = CLINICAL.hr_high_bpm;
+        if (thresh == null || mx - mn < 1e-6 || thresh < mn || thresh > mx) {
+          line.setAttribute("visibility", "hidden");
+          return;
+        }
+        var plotH = HR_plotB - HR_plotT;
+        var nr = (thresh - mn) / (mx - mn);
+        var y = HR_plotB - 3 - nr * (plotH - 6);
+        line.setAttribute("x1", String(CHART_plotL));
+        line.setAttribute("x2", String(CHART_plotL + CHART_plotW));
+        line.setAttribute("y1", y.toFixed(1));
+        line.setAttribute("y2", y.toFixed(1));
+        line.setAttribute("visibility", "visible");
+      }
+
+      function riskScoreForModel(pt, modelId) {
+        if (!pt) return null;
+        var k = "risk_score_" + modelId;
+        if (pt[k] != null) return Number(pt[k]);
+        if (modelId === primaryModelId && pt.risk_score != null) return Number(pt.risk_score);
+        return null;
+      }
+
+      function tierForModel(pt, modelId) {
+        if (!pt) return "";
+        var k = "tier_" + modelId;
+        if (pt[k] != null) return String(pt[k]);
+        if (modelId === primaryModelId && pt.tier != null) return String(pt.tier);
+        return "";
+      }
+
+      function riskModelsToShow() {
+        if (riskChartView === "both") return MODEL_IDS.slice();
+        if (MODEL_IDS.indexOf(riskChartView) >= 0) return [riskChartView];
+        return MODEL_IDS.slice();
+      }
+
+      function riskPolyFromSub(sub, modelId) {
+        var L = CHART_plotL,
+          W = CHART_plotW,
+          T = RISK_plotT,
+          B = RISK_plotB;
+        var n = sub.length;
         if (n === 0) return "";
+        var rs0 = riskScoreForModel(sub[0], modelId);
+        if (rs0 == null) return "";
         if (n === 1) {
-          const y = h - (sub[0].risk_score / 100) * h;
-          return "0," + y.toFixed(1) + " 280," + y.toFixed(1);
+          var x = L + W / 2;
+          var y = B - (rs0 / 100) * (B - T);
+          return x.toFixed(1) + "," + y.toFixed(1) + " " + x.toFixed(1) + "," + y.toFixed(1);
         }
         return sub
           .map(function (p, i) {
-            const x = (i / (n - 1)) * w;
-            const y = h - (p.risk_score / 100) * h;
+            var x = L + (i / (n - 1)) * W;
+            var rs = riskScoreForModel(p, modelId);
+            if (rs == null) rs = 0;
+            var y = B - (rs / 100) * (B - T);
             return x.toFixed(1) + "," + y.toFixed(1);
           })
           .join(" ");
       }
 
-      function hrSparkPolyline(stream, endInclusive, windowPts) {
-        const w = 280, h = 44;
-        const end = Math.max(0, Math.min(endInclusive, stream.length - 1));
-        const start = Math.max(0, end - windowPts + 1);
-        const sub = stream.slice(start, end + 1);
-        const n = sub.length;
-        if (n < 2) return "";
-        let mn = sub[0].hr, mx = sub[0].hr;
-        for (let i = 1; i < n; i++) {
+      function updateRiskChartPolylines(sub) {
+        var show = riskModelsToShow();
+        MODEL_IDS.forEach(function (mid) {
+          var poly = document.getElementById("detail-risk-poly-" + mid);
+          if (!poly) return;
+          var on = show.indexOf(mid) >= 0;
+          if (!on) {
+            poly.setAttribute("points", "");
+            poly.setAttribute("visibility", "hidden");
+            return;
+          }
+          var pts = riskPolyFromSub(sub, mid);
+          poly.setAttribute("points", pts);
+          poly.setAttribute("visibility", pts ? "visible" : "hidden");
+        });
+      }
+
+      function hrPolyFromSub(sub) {
+        var L = CHART_plotL,
+          W = CHART_plotW,
+          T = HR_plotT,
+          B = HR_plotB;
+        var plotH = B - T;
+        var n = sub.length;
+        if (n === 0) return { points: "", mn: 70, mx: 100 };
+        if (n === 1) {
+          var x = L + W / 2;
+          var y = (T + B) / 2;
+          return { points: x.toFixed(1) + "," + y.toFixed(1) + " " + x.toFixed(1) + "," + y.toFixed(1), mn: sub[0].hr, mx: sub[0].hr };
+        }
+        var mn = sub[0].hr,
+          mx = sub[0].hr;
+        for (var i = 1; i < n; i++) {
           mn = Math.min(mn, sub[i].hr);
           mx = Math.max(mx, sub[i].hr);
         }
@@ -502,13 +1856,353 @@
           mn -= 1;
           mx += 1;
         }
-        return sub
+        var pts = sub
           .map(function (p, i) {
-            const x = (i / (n - 1)) * w;
-            const y = h - ((p.hr - mn) / (mx - mn)) * (h - 6) - 3;
+            var x = L + (i / (n - 1)) * W;
+            var nr = (p.hr - mn) / (mx - mn);
+            var y = B - 3 - nr * (plotH - 6);
             return x.toFixed(1) + "," + y.toFixed(1);
           })
           .join(" ");
+        return { points: pts, mn: mn, mx: mx };
+      }
+
+      function mapPolyFromSub(sub) {
+        var L = CHART_plotL,
+          W = CHART_plotW,
+          T = MAP_plotT,
+          B = MAP_plotB;
+        var plotH = B - T;
+        var n = sub.length;
+        if (n === 0) return { points: "", mn: 70, mx: 90 };
+        if (n === 1) {
+          var x = L + W / 2;
+          var y = (T + B) / 2;
+          return { points: x.toFixed(1) + "," + y.toFixed(1) + " " + x.toFixed(1) + "," + y.toFixed(1), mn: sub[0].map, mx: sub[0].map };
+        }
+        var mn = sub[0].map,
+          mx = sub[0].map;
+        for (var i = 1; i < n; i++) {
+          mn = Math.min(mn, sub[i].map);
+          mx = Math.max(mx, sub[i].map);
+        }
+        if (mx - mn < 1e-6) {
+          mn -= 1;
+          mx += 1;
+        }
+        var pts = sub
+          .map(function (p, i) {
+            var x = L + (i / (n - 1)) * W;
+            var nr = (p.map - mn) / (mx - mn);
+            var y = B - 3 - nr * (plotH - 6);
+            return x.toFixed(1) + "," + y.toFixed(1);
+          })
+          .join(" ");
+        return { points: pts, mn: mn, mx: mx };
+      }
+
+      function localIndexFromPlotX(vbx, plotL, plotW, n) {
+        if (n <= 1) return 0;
+        var t = (vbx - plotL) / plotW;
+        if (t < 0) t = 0;
+        if (t > 1) t = 1;
+        return Math.round(t * (n - 1));
+      }
+
+      function clientToSvgPoint(svg, clientX, clientY) {
+        var p = svg.createSVGPoint();
+        p.x = clientX;
+        p.y = clientY;
+        var ctm = svg.getScreenCTM();
+        if (!ctm) return { x: 0, y: 0 };
+        return p.matrixTransform(ctm.inverse());
+      }
+
+      function hideCrosshairGraphics() {
+        ["detail-risk-crosshair", "detail-map-crosshair", "detail-hr-crosshair"].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.setAttribute("visibility", "hidden");
+        });
+        MODEL_IDS.forEach(function (mid) {
+          var el = document.getElementById("detail-risk-dot-" + mid);
+          if (el) el.setAttribute("visibility", "hidden");
+        });
+        ["detail-map-dot", "detail-hr-dot"].forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) el.setAttribute("visibility", "hidden");
+        });
+      }
+
+      function positionTooltip(clientX, clientY) {
+        var tip = document.getElementById("chart-sync-tooltip");
+        if (!tip || tip.style.display !== "block") return;
+        var pad = 14;
+        var tw = tip.offsetWidth || 200;
+        var th = tip.offsetHeight || 80;
+        var x = clientX + pad;
+        var y = clientY + pad;
+        if (x + tw > window.innerWidth - 8) x = clientX - tw - pad;
+        if (y + th > window.innerHeight - 8) y = clientY - th - pad;
+        tip.style.left = Math.max(8, x) + "px";
+        tip.style.top = Math.max(8, y) + "px";
+      }
+
+      function fillTooltip(pt) {
+        var tip = document.getElementById("chart-sync-tooltip");
+        if (!tip || !pt) return;
+        var esc = function (s) {
+          return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+        };
+        var riskBlock = "";
+        riskModelsToShow().forEach(function (mid) {
+          var rs = riskScoreForModel(pt, mid);
+          if (rs == null) return;
+          riskBlock +=
+            '<div class="t-row"><strong>Risk</strong> (' +
+            esc(mid) +
+            ") " +
+            String(rs) +
+            "/100 <span style=\"color:#94a3b8\">(" +
+            esc(tierForModel(pt, mid)) +
+            ")</span></div>";
+        });
+        tip.innerHTML =
+          '<div class="t-time">' +
+          esc(pt.charttime || "") +
+          "</div>" +
+          riskBlock +
+          '<div class="t-row"><strong>MAP</strong> ' +
+          Math.round(pt.map) +
+          " mmHg · <strong>HR</strong> " +
+          Math.round(pt.hr) +
+          " bpm · <strong>RR</strong> " +
+          Math.round(pt.rr) +
+          " /min</div>" +
+          '<div class="t-row"><strong>SpO₂</strong> ' +
+          (pt.spo2 != null ? Math.round(pt.spo2) + "%" : "—") +
+          " · <strong>Temp</strong> " +
+          (pt.temp_c != null ? Number(pt.temp_c).toFixed(1) + "°C" : "—") +
+          "</div>";
+      }
+
+      function applyLiveFromFrame(pt) {
+        if (!pt) return;
+        document.getElementById("detail-risk-num").textContent = String(pt.risk_score);
+        document.getElementById("detail-tier").textContent = String(pt.tier || "").toUpperCase();
+        document.getElementById("detail-map").textContent = Math.round(pt.map) + " mmHg";
+        document.getElementById("detail-hr").textContent = Math.round(pt.hr) + " bpm";
+        document.getElementById("detail-rr").textContent = Math.round(pt.rr) + " /min";
+        updateBedsideMonitors(pt);
+        var big = document.getElementById("detail-risk-big");
+        var tierLine = document.getElementById("detail-tier-line");
+        ["tier-low", "tier-moderate", "tier-high", "tier-critical"].forEach(function (c) {
+          big.classList.remove(c);
+          tierLine.classList.remove(c);
+        });
+        var tc = tierClass(pt.tier || "low");
+        big.classList.add(tc);
+        tierLine.classList.add(tc);
+        renderClinicalBadges(
+          document.getElementById("detail-clinical-badges"),
+          clinicalFlags(pt)
+        );
+      }
+
+      function refreshSyncHoverFromIndex() {
+        var sub = chartHover.sub;
+        if (!syncHover.active || !sub.length) return;
+        var li = Math.max(0, Math.min(syncHover.localIndex, sub.length - 1));
+        syncHover.localIndex = li;
+        var pt = sub[li];
+        var n = sub.length;
+        var xMid =
+          n <= 1 ? CHART_plotL + CHART_plotW / 2 : CHART_plotL + (li / (n - 1)) * CHART_plotW;
+
+        var rLine = document.getElementById("detail-risk-crosshair");
+        var mLine = document.getElementById("detail-map-crosshair");
+        var hLine = document.getElementById("detail-hr-crosshair");
+        var mDot = document.getElementById("detail-map-dot");
+        var hDot = document.getElementById("detail-hr-dot");
+        if (rLine) {
+          rLine.setAttribute("x1", xMid);
+          rLine.setAttribute("x2", xMid);
+          rLine.setAttribute("y1", RISK_plotT);
+          rLine.setAttribute("y2", RISK_plotB);
+          rLine.setAttribute("visibility", "visible");
+        }
+        if (mLine) {
+          mLine.setAttribute("x1", xMid);
+          mLine.setAttribute("x2", xMid);
+          mLine.setAttribute("y1", MAP_plotT);
+          mLine.setAttribute("y2", MAP_plotB);
+          mLine.setAttribute("visibility", "visible");
+        }
+        if (hLine) {
+          hLine.setAttribute("x1", xMid);
+          hLine.setAttribute("x2", xMid);
+          hLine.setAttribute("y1", HR_plotT);
+          hLine.setAttribute("y2", HR_plotB);
+          hLine.setAttribute("visibility", "visible");
+        }
+        MODEL_IDS.forEach(function (mid) {
+          var dot = document.getElementById("detail-risk-dot-" + mid);
+          if (!dot) return;
+          if (riskModelsToShow().indexOf(mid) < 0) {
+            dot.setAttribute("visibility", "hidden");
+            return;
+          }
+          var rs = riskScoreForModel(pt, mid);
+          if (rs == null) {
+            dot.setAttribute("visibility", "hidden");
+            return;
+          }
+          var rY = RISK_plotB - (rs / 100) * (RISK_plotB - RISK_plotT);
+          dot.setAttribute("cx", xMid);
+          dot.setAttribute("cy", rY);
+          dot.setAttribute("visibility", "visible");
+        });
+
+        var mapMn = chartHover.mapMn,
+          mapMx = chartHover.mapMx;
+        var mapPlotH = MAP_plotB - MAP_plotT;
+        var mapNr = (pt.map - mapMn) / Math.max(mapMx - mapMn, 1e-6);
+        var mY = MAP_plotB - 3 - mapNr * (mapPlotH - 6);
+        if (mDot) {
+          mDot.setAttribute("cx", xMid);
+          mDot.setAttribute("cy", mY);
+          mDot.setAttribute("visibility", "visible");
+        }
+
+        var hrMn = chartHover.hrMn,
+          hrMx = chartHover.hrMx;
+        var hrPlotH = HR_plotB - HR_plotT;
+        var hrNr = (pt.hr - hrMn) / Math.max(hrMx - hrMn, 1e-6);
+        var hY = HR_plotB - 3 - hrNr * (hrPlotH - 6);
+        if (hDot) {
+          hDot.setAttribute("cx", xMid);
+          hDot.setAttribute("cy", hY);
+          hDot.setAttribute("visibility", "visible");
+        }
+
+        var mapEl = document.getElementById("detail-map");
+        if (mapEl) mapEl.textContent = Math.round(pt.map) + " mmHg";
+        var hrEl = document.getElementById("detail-hr");
+        if (hrEl) hrEl.textContent = Math.round(pt.hr) + " bpm";
+        var rrEl = document.getElementById("detail-rr");
+        if (rrEl) rrEl.textContent = Math.round(pt.rr) + " /min";
+        updateBedsideMonitors(pt);
+
+        fillTooltip(pt);
+        requestAnimationFrame(function () {
+          positionTooltip(syncHover.lastClientX, syncHover.lastClientY);
+        });
+      }
+
+      function hideSyncedHover() {
+        syncHover.active = false;
+        var tip = document.getElementById("chart-sync-tooltip");
+        if (tip) {
+          tip.style.display = "none";
+          tip.innerHTML = "";
+        }
+        hideCrosshairGraphics();
+      }
+
+      function leaveChartsRestoreLive() {
+        hideSyncedHover();
+        var fr = currentFrame(selectedBed);
+        if (fr) applyLiveFromFrame(fr);
+      }
+
+      function onChartMouseMove(ev, svgRoot) {
+        var sub = chartHover.sub;
+        if (!sub.length || !svgRoot) return;
+        var p = clientToSvgPoint(svgRoot, ev.clientX, ev.clientY);
+        syncHover.localIndex = localIndexFromPlotX(p.x, CHART_plotL, CHART_plotW, sub.length);
+        syncHover.lastClientX = ev.clientX;
+        syncHover.lastClientY = ev.clientY;
+        syncHover.active = true;
+        var tip = document.getElementById("chart-sync-tooltip");
+        if (tip) tip.style.display = "block";
+        refreshSyncHoverFromIndex();
+      }
+
+      function bindChartSync() {
+        var riskSvg = document.getElementById("detail-risk-svg");
+        var mapSvg = document.getElementById("detail-map-spark");
+        var hrSvg = document.getElementById("detail-hr-spark");
+        var riskHit = document.getElementById("detail-risk-hit");
+        var mapHit = document.getElementById("detail-map-hit");
+        var hrHit = document.getElementById("detail-hr-hit");
+        if (!riskHit || !mapHit || !hrHit) return;
+        if (riskHit.dataset.bound !== "1") {
+          riskHit.dataset.bound = "1";
+          riskHit.addEventListener("mousemove", function (e) {
+            onChartMouseMove(e, riskSvg);
+          });
+        }
+        if (mapHit.dataset.bound !== "1") {
+          mapHit.dataset.bound = "1";
+          mapHit.addEventListener("mousemove", function (e) {
+            onChartMouseMove(e, mapSvg);
+          });
+        }
+        if (hrHit.dataset.bound !== "1") {
+          hrHit.dataset.bound = "1";
+          hrHit.addEventListener("mousemove", function (e) {
+            onChartMouseMove(e, hrSvg);
+          });
+        }
+        var zone = document.getElementById("chart-sync-zone");
+        if (zone && zone.dataset.leaveBound !== "1") {
+          zone.dataset.leaveBound = "1";
+          zone.addEventListener("mouseleave", leaveChartsRestoreLive);
+        }
+      }
+
+      function paintDetailShell() {
+        const s = streamFor(selectedBed);
+        const meta = document.getElementById("detail-meta");
+        if (meta) meta.textContent = bedMeta(selectedBed);
+        paintPatientDemographics(selectedBed);
+        renderRiskAlertLog(selectedBed);
+        const fr = currentFrame(selectedBed);
+        if (!fr) return;
+
+        const step = frameIndex(selectedBed);
+        const sl = computeChartSlice(s, step);
+        chartHover.sliceStart = sl.start;
+        chartHover.sub = sl.sub;
+        chartHover.stream = s;
+        var mapR = mapPolyFromSub(sl.sub);
+        chartHover.mapMn = mapR.mn;
+        chartHover.mapMx = mapR.mx;
+        var hrR = hrPolyFromSub(sl.sub);
+        chartHover.hrMn = hrR.mn;
+        chartHover.hrMx = hrR.mx;
+
+        updateRiskChartPolylines(sl.sub);
+        document.getElementById("detail-map-poly").setAttribute("points", mapR.points);
+        updateMapYAxisLabels(mapR.mn, mapR.mx);
+        updateMapThresholdLine(mapR.mn, mapR.mx);
+        document.getElementById("detail-hr-poly").setAttribute("points", hrR.points);
+        updateHrYAxisLabels(hrR.mn, hrR.mx);
+        updateHrThresholdLine(hrR.mn, hrR.mx);
+
+        applyLiveFromFrame(fr);
+
+        if (!syncHover.active) {
+          hideCrosshairGraphics();
+          var tip = document.getElementById("chart-sync-tooltip");
+          if (tip) tip.style.display = "none";
+        } else {
+          syncHover.localIndex = Math.min(syncHover.localIndex, Math.max(0, sl.sub.length - 1));
+          refreshSyncHoverFromIndex();
+        }
       }
 
       function syncUrl() {
@@ -516,13 +2210,13 @@
         u.searchParams.set("seed", String(seed));
         u.searchParams.set("bed_count", String(bedCount));
         u.searchParams.set("selected_bed", String(selectedBed));
-        u.searchParams.set("risk_model", riskModel);
         window.history.replaceState({}, "", u.toString());
         var hid = document.getElementById("inp-selected-bed");
         if (hid) hid.value = String(selectedBed);
       }
 
       function setSelected(bedIdx) {
+        hideSyncedHover();
         selectedBed = Math.max(0, Math.min(bedIdx, STREAMS.length - 1));
         document.querySelectorAll(".bed-bay").forEach(function (el) {
           const i = parseInt(el.getAttribute("data-bed"), 10);
@@ -549,34 +2243,9 @@
           (b.stay_id != null ? b.stay_id : "") +
           " · " +
           (b.scenario_name || "") +
-          " · model " +
-          (b.risk_model_id || riskModel)
+          " · scoring " +
+          primaryModelId
         );
-      }
-
-      function paintDetailShell() {
-        const s = streamFor(selectedBed);
-        const fr = currentFrame(selectedBed);
-        const meta = document.getElementById("detail-meta");
-        if (meta) meta.textContent = bedMeta(selectedBed);
-        if (!fr) return;
-        document.getElementById("detail-risk-num").textContent = String(fr.risk_score);
-        document.getElementById("detail-tier").textContent = String(fr.tier || "").toUpperCase();
-        document.getElementById("detail-map").textContent = Math.round(fr.map) + " mmHg";
-        document.getElementById("detail-hr").textContent = Math.round(fr.hr) + " bpm";
-        document.getElementById("detail-rr").textContent = Math.round(fr.rr) + " /min";
-        var big = document.getElementById("detail-risk-big");
-        var tierLine = document.getElementById("detail-tier-line");
-        ["tier-low", "tier-moderate", "tier-high", "tier-critical"].forEach(function (c) {
-          big.classList.remove(c);
-          tierLine.classList.remove(c);
-        });
-        var tc = tierClass(fr.tier || "low");
-        big.classList.add(tc);
-        tierLine.classList.add(tc);
-        const step = frameIndex(selectedBed);
-        document.getElementById("detail-risk-poly").setAttribute("points", riskPolylineToStep(s, step));
-        document.getElementById("detail-hr-poly").setAttribute("points", hrSparkPolyline(s, step, 24));
       }
 
       var explainAbort = null;
@@ -588,7 +2257,6 @@
           seed: String(seed),
           bed: String(selectedBed),
           step: String(step),
-          risk_model: riskModel,
         });
         if (explainAbort) explainAbort.abort();
         explainAbort = new AbortController();
@@ -602,18 +2270,6 @@
             if (probEl && typeof j.risk_prob === "number") {
               probEl.textContent = j.risk_prob.toFixed(3);
             }
-            function fillList(id, items) {
-              var ul = document.getElementById(id);
-              if (!ul) return;
-              ul.innerHTML = "";
-              (items || []).forEach(function (line) {
-                var li = document.createElement("li");
-                li.textContent = line;
-                ul.appendChild(li);
-              });
-            }
-            fillList("detail-clinical", j.clinical);
-            fillList("detail-model", j.model);
           })
           .catch(function () {});
       }
@@ -632,9 +2288,56 @@
         });
       });
 
+
+
+      function bindWardControls() {
+        var wf = document.getElementById("ward-form");
+        if (wf && wf.dataset.ackResetBound !== "1") {
+          wf.dataset.ackResetBound = "1";
+          wf.addEventListener("submit", function () {
+            var sEl = document.getElementById("inp-seed");
+            var bcEl = document.getElementById("inp-bed-count");
+            if (!sEl || !bcEl) return;
+            clearRiskAcksForCohort(sEl.value, bcEl.value);
+          });
+        }
+        var sortEl = document.getElementById("ward-sort");
+        var filterEl = document.getElementById("ward-filter");
+        if (sortEl && sortEl.dataset.bound !== "1") {
+          sortEl.dataset.bound = "1";
+          sortEl.addEventListener("change", function () {
+            wardSortMode = sortEl.value;
+            paintAllBays();
+          });
+        }
+        if (filterEl && filterEl.dataset.bound !== "1") {
+          filterEl.dataset.bound = "1";
+          filterEl.addEventListener("change", function () {
+            wardFilterMode = filterEl.value;
+            paintAllBays();
+          });
+        }
+      }
+
+      function bindRiskChartView() {
+        var sel = document.getElementById("risk-chart-view");
+        if (!sel || sel.dataset.bound === "1") return;
+        sel.dataset.bound = "1";
+        sel.addEventListener("change", function () {
+          riskChartView = sel.value;
+          var sub = chartHover.sub;
+          if (sub && sub.length) updateRiskChartPolylines(sub);
+          if (syncHover.active) refreshSyncHoverFromIndex();
+        });
+      }
+
       paintAllBays();
       paintDetailShell();
       fetchExplain();
+      bindChartSync();
+      bindRiskChartView();
+      bindWardControls();
+      bindRiskLogAndExport();
 
       setInterval(function () {
         tick += 1;

@@ -98,7 +98,7 @@ def _logistic_contribution_lines(
     feature_names: list[str],
     meta: dict,
     max_lines: int,
-) -> list[str]:
+) -> tuple[list[str], set[int]]:
     coef = meta.get("deterioration_logistic_coefficients")
     mean = meta.get("deterioration_feature_mean")
     std = meta.get("deterioration_feature_std")
@@ -109,7 +109,7 @@ def _logistic_contribution_lines(
         or len(coef) != len(feature_names)
         or len(mean) != len(feature_names)
     ):
-        return []
+        return [], set()
     x = np.array([float(fe_row.get(c, 0.0)) for c in feature_names], dtype=np.float64)
     m = np.array(mean, dtype=np.float64)
     s = np.maximum(np.array(std, dtype=np.float64), 1e-6)
@@ -118,9 +118,11 @@ def _logistic_contribution_lines(
     contrib = b * z
     order = np.argsort(-np.abs(contrib))
     lines: list[str] = []
+    used: set[int] = set()
     for idx in order[:max_lines]:
         if abs(contrib[idx]) < 1e-8:
             break
+        used.add(int(idx))
         name = humanize_feature_name(feature_names[idx])
         cj = float(contrib[idx])
         direction = "increases" if cj > 0 else "decreases"
@@ -128,7 +130,7 @@ def _logistic_contribution_lines(
             f"<strong>{name}</strong> — in the primary logistic model this pattern "
             f"<strong>{direction}</strong> estimated log-risk (contribution ≈ {cj:+.2f} in standardized units)."
         )
-    return lines
+    return lines, used
 
 
 def model_feature_explanations(
@@ -142,8 +144,12 @@ def model_feature_explanations(
     """
     lines: list[str] = []
     ptype = str(meta.get("deterioration_primary_type", "")).lower()
+    used_idx: set[int] = set()
     if ptype == "logistic" and meta.get("deterioration_logistic_coefficients"):
-        lines.extend(_logistic_contribution_lines(fe_row, feature_names, meta, min(3, max_bullets)))
+        sub, used_idx = _logistic_contribution_lines(
+            fe_row, feature_names, meta, min(3, max_bullets)
+        )
+        lines.extend(sub)
     remaining = max(0, max_bullets - len(lines))
     if remaining == 0:
         return lines
@@ -160,9 +166,12 @@ def model_feature_explanations(
     w = np.array(imp, dtype=np.float64) if imp and len(imp) == len(feature_names) else np.ones(len(z))
     contrib = np.abs(z) * w
     order = np.argsort(-contrib)
-    for idx in order[:remaining]:
+    added = 0
+    for idx in order:
+        if int(idx) in used_idx:
+            continue
         if contrib[idx] < 1e-9:
-            break
+            continue
         name = humanize_feature_name(feature_names[idx])
         zi = float(z[idx])
         if zi > 1.0:
@@ -177,6 +186,9 @@ def model_feature_explanations(
             f"<strong>{name}</strong> — {qual} (standardized offset ≈ {zi:+.1f}). "
             "The risk model uses this pattern <strong>together with</strong> other features."
         )
+        added += 1
+        if added >= remaining:
+            break
     return lines
 
 

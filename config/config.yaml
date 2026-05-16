@@ -43,6 +43,15 @@ alarms:
   sbp_threshold_mmhg: 90
   merge_gap_minutes: 15
 
+# Bedside rule flags shown on ward tiles and detail panel (independent of ML risk).
+clinical_display:
+  hr_tachycardia_bpm: 100
+  rr_low_per_min: 8
+  rr_high_per_min: 30
+  shock_index_high: 0.9
+  risk_delta_lookback_minutes: 15
+  risk_delta_min_points: 5
+
 labels:
   # Used for alarm-episode construction if re-enabled; not used by deterioration-only train path.
   sustained_hypotension_minutes: 12

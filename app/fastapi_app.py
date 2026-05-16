@@ -40,12 +40,95 @@ BED_SCENARIO_PATTERN: tuple[ScenarioId, ...] = (
 )
 
 
+def synthetic_patient_card(seed: int, bed_idx: int) -> dict:
+    """Reproducible fake demographics for ward demo (not real PHI)."""
+    rng = np.random.default_rng(int(seed) * 1_000_003 + int(bed_idx) * 9973 + 404_231)
+    pid = 1000 + int(bed_idx)
+
+    blood_types = ("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-")
+    allergens = [
+        "Penicillin",
+        "Sulfa drugs",
+        "Latex",
+        "Shellfish",
+        "Morphine",
+        "Codeine",
+        "Aspirin",
+        "IV contrast (iodinated)",
+        "NSAIDs",
+        "Heparin",
+    ]
+    reasons = [
+        "Sepsis with vasopressor requirement",
+        "Acute hypoxemic respiratory failure — intubated",
+        "Acute decompensated heart failure with cardiogenic shock evaluation",
+        "Large-volume GI bleed with hemodynamic instability",
+        "Post-operative monitoring after emergent laparotomy",
+        "Severe pneumonia with septic shock",
+        "Acute kidney injury requiring continuous renal replacement therapy",
+        "Altered mental status — intracranial hemorrhage rule-out",
+        "Polytrauma — ICU resuscitation bay",
+        "Drug overdose with airway protection",
+        "Acute asthma / COPD exacerbation with hypercapnic failure",
+        "Pancreatitis with SIRS and fluid resuscitation",
+    ]
+
+    nkda = rng.random() < 0.27
+    if nkda:
+        allergies = "NKDA (no known drug allergies)"
+    else:
+        k = int(rng.integers(1, 4))
+        pick_ix = rng.choice(np.arange(len(allergens)), size=k, replace=False)
+        allergies = ", ".join(allergens[int(i)] for i in sorted(pick_ix.tolist()))
+
+    code_roll = float(rng.random())
+    if code_roll < 0.78:
+        code_status = "Full code"
+    elif code_roll < 0.92:
+        code_status = "DNR / DNI"
+    else:
+        code_status = "Comfort-focused care goals"
+
+    return {
+        "display_name": f"Patient {pid}",
+        "patient_number": str(pid),
+        "mrn": f"MRN-{int(seed):04d}-{int(bed_idx):02d}",
+        "blood_type": str(rng.choice(blood_types)),
+        "allergies": allergies,
+        "admission_reason": str(rng.choice(reasons)),
+        "code_status": code_status,
+    }
+
+
+def elevated_risk_events(chart_records: list[dict]) -> list[dict]:
+    """Timesteps where primary-model tier is high or critical (for staff review log)."""
+    out: list[dict] = []
+    for i, rec in enumerate(chart_records):
+        tier = str(rec.get("tier") or "").strip().lower()
+        if tier not in ("high", "critical"):
+            continue
+        rs = rec.get("risk_score")
+        try:
+            rsi = int(rs) if rs is not None else 0
+        except (TypeError, ValueError):
+            rsi = 0
+        out.append(
+            {
+                "stream_index": int(i),
+                "charttime": str(rec.get("charttime") or ""),
+                "risk_score": rsi,
+                "tier": tier,
+            }
+        )
+    return out
+
+
 def scenario_for_bed(bed_idx: int) -> ScenarioId:
     return BED_SCENARIO_PATTERN[bed_idx % len(BED_SCENARIO_PATTERN)]
 
 
-# Cached patient timelines for API + ward JSON (key: risk_model_id, seed, bed_idx).
-_BED_TIMELINE_CACHE: dict[tuple[str, int, int], dict] = {}
+# Cached patient timelines for API + ward JSON (key: seed, bed_idx).
+_BED_TIMELINE_CACHE: dict[tuple[int, int], dict] = {}
 _BED_CACHE_MAX = 48
 
 app = FastAPI(title="ICU Monitor")
@@ -84,13 +167,6 @@ except FileNotFoundError as exc:
     ARTIFACT_LOAD_ERROR = str(exc)
 
 
-def _resolve_model_id(requested: str | None) -> str:
-    assert DET_MODELS is not None and PRIMARY_MODEL_ID is not None
-    if requested and requested in DET_MODELS:
-        return requested
-    return PRIMARY_MODEL_ID
-
-
 def model_ids_primary_first(meta: dict, primary_id: str) -> list[str]:
     """List deterioration model ids with config/metadata primary first (product default)."""
     raw = [str(e["id"]) for e in (meta.get("deterioration_models") or [])]
@@ -99,51 +175,56 @@ def model_ids_primary_first(meta: dict, primary_id: str) -> list[str]:
     return raw
 
 
-def _get_or_build_timeline(
-    scenario: ScenarioId,
-    patient_seed: int,
-    risk_model: str | None,
-) -> dict:
-    """Build g, fe, probabilities, risk scores, and chart stream for one simulated stay."""
+def _get_or_build_timeline(scenario: ScenarioId, patient_seed: int) -> dict:
+    """Build g, fe, per-model risk scores, and chart stream for one simulated stay."""
     assert CFG is not None and META is not None and DET_MODELS is not None
-    mid = _resolve_model_id(risk_model)
-    model = DET_MODELS[mid]
+    pri = PRIMARY_MODEL_ID
 
-    if scenario == "random":
-        rng = np.random.default_rng(int(CFG["data"]["random_seed"]) + int(patient_seed))
-    else:
-        rng = np.random.default_rng(0)
+    rng = np.random.default_rng(int(CFG["data"]["random_seed"]) + int(patient_seed))
 
     g = build_scenario(CFG, scenario, rng).reset_index(drop=True)
     fe = compute_timeseries_features(g, CFG).reset_index(drop=True)
 
     cols_d = META["features_deterioration"]
-    p_det = np.asarray(
-        model.predict_proba(fe[cols_d].to_numpy(dtype=np.float64))[:, 1],
-        dtype=np.float64,
-    )
-    risk_scores = np.clip(np.round(100.0 * p_det), 0, 100).astype(int)
+    X = fe[cols_d].to_numpy(dtype=np.float64)
+
+    scores_by_model: dict[str, np.ndarray] = {}
+    probs_by_model: dict[str, np.ndarray] = {}
+    for mid, model in DET_MODELS.items():
+        p = np.asarray(model.predict_proba(X)[:, 1], dtype=np.float64)
+        probs_by_model[mid] = p
+        scores_by_model[mid] = np.clip(np.round(100.0 * p), 0, 100).astype(int)
+
+    p_det = probs_by_model[pri]
+    risk_scores = scores_by_model[pri]
+
     chart_records: list[dict] = []
-    for i, row in enumerate(g[["charttime", "map", "sbp", "hr", "rr"]].itertuples(index=False)):
-        rs = int(risk_scores[i]) if i < len(risk_scores) else int(risk_scores[-1])
-        chart_records.append(
-            {
-                "charttime": str(row[0]),
-                "map": float(row[1]),
-                "sbp": float(row[2]),
-                "hr": float(row[3]),
-                "rr": float(row[4]),
-                "risk_score": rs,
-                "tier": risk_tier_label(float(rs), CFG),
-            }
-        )
+    for i, row in enumerate(
+        g[["charttime", "map", "sbp", "hr", "rr", "spo2", "temp_c"]].itertuples(index=False)
+    ):
+        rec: dict = {
+            "charttime": str(row[0]),
+            "map": float(row[1]),
+            "sbp": float(row[2]),
+            "hr": float(row[3]),
+            "rr": float(row[4]),
+            "spo2": float(row[5]),
+            "temp_c": float(row[6]),
+        }
+        for mid, sc_arr in scores_by_model.items():
+            rs = int(sc_arr[i]) if i < len(sc_arr) else int(sc_arr[-1])
+            rec[f"risk_score_{mid}"] = rs
+            rec[f"tier_{mid}"] = risk_tier_label(float(rs), CFG)
+        rec["risk_score"] = rec[f"risk_score_{pri}"]
+        rec["tier"] = rec[f"tier_{pri}"]
+        chart_records.append(rec)
     return {
         "scenario": scenario,
         "scenario_name": scenario_display_name(scenario),
         "stay_id": int(g["stay_id"].iloc[0]),
         "age": int(g["age"].iloc[0]),
         "sex": "M" if g["sex"].iloc[0] == 1 else "F",
-        "risk_model_id": mid,
+        "risk_model_id": pri,
         "p_det": p_det,
         "risk_scores": risk_scores,
         "g": g,
@@ -152,17 +233,16 @@ def _get_or_build_timeline(
     }
 
 
-def get_cached_bed_timeline(seed: int, bed_idx: int, risk_model: str | None) -> dict:
+def get_cached_bed_timeline(seed: int, bed_idx: int) -> dict:
     """Timeline for ward bed `bed_idx` with cohort `seed` (patient_seed = seed + bed_idx)."""
     assert CFG is not None and META is not None and DET_MODELS is not None
-    mid = _resolve_model_id(risk_model)
-    key = (mid, int(seed), int(bed_idx))
+    key = (int(seed), int(bed_idx))
     if key not in _BED_TIMELINE_CACHE:
         if len(_BED_TIMELINE_CACHE) >= _BED_CACHE_MAX:
             _BED_TIMELINE_CACHE.clear()
         scenario = scenario_for_bed(bed_idx)
         patient_seed = int(seed) + int(bed_idx)
-        _BED_TIMELINE_CACHE[key] = _get_or_build_timeline(scenario, patient_seed, risk_model)
+        _BED_TIMELINE_CACHE[key] = _get_or_build_timeline(scenario, patient_seed)
     return _BED_TIMELINE_CACHE[key]
 
 
@@ -209,6 +289,8 @@ def _bundle_to_dashboard(bundle: dict) -> dict:
             "map": float(last["map"]),
             "hr": float(last["hr"]),
             "rr": float(last["rr"]),
+            "spo2": float(last["spo2"]),
+            "temp_c": float(last["temp_c"]),
         },
         "clinical_explanations": clin_lines,
         "model_explanations": model_lines,
@@ -217,18 +299,14 @@ def _bundle_to_dashboard(bundle: dict) -> dict:
     }
 
 
-def compute_dashboard_data(
-    scenario: ScenarioId,
-    seed: int,
-    risk_model: str | None = None,
-) -> dict:
-    bundle = _get_or_build_timeline(scenario, seed, risk_model)
+def compute_dashboard_data(scenario: ScenarioId, seed: int) -> dict:
+    bundle = _get_or_build_timeline(scenario, seed)
     return _bundle_to_dashboard(bundle)
 
 
-def ward_bed_json(seed: int, bed_idx: int, risk_model: str | None) -> dict:
+def ward_bed_json(seed: int, bed_idx: int) -> dict:
     """Serializable ward payload for one bed (no DataFrames)."""
-    b = get_cached_bed_timeline(seed, bed_idx, risk_model)
+    b = get_cached_bed_timeline(seed, bed_idx)
     return {
         "bed_idx": bed_idx,
         "bed_label": f"Bed {bed_idx + 1:02d}",
@@ -240,14 +318,17 @@ def ward_bed_json(seed: int, bed_idx: int, risk_model: str | None) -> dict:
         "sex": b["sex"],
         "risk_model_id": b["risk_model_id"],
         "stream": b["chart_records"],
+        "patient_card": synthetic_patient_card(seed, bed_idx),
+        "elevated_risk_events": elevated_risk_events(b["chart_records"]),
     }
 
 
-def build_ward_overview(seed: int, bed_count: int, risk_model: str | None) -> list[dict]:
+def build_ward_overview(seed: int, bed_count: int) -> list[dict]:
     beds: list[dict] = []
     for bed_idx in range(max(1, bed_count)):
-        bundle = get_cached_bed_timeline(seed, bed_idx, risk_model)
+        bundle = get_cached_bed_timeline(seed, bed_idx)
         details = _bundle_to_dashboard(bundle)
+        details["patient_card"] = synthetic_patient_card(seed, bed_idx)
         beds.append(
             {
                 "bed_idx": bed_idx,
@@ -263,9 +344,9 @@ def build_ward_overview(seed: int, bed_count: int, risk_model: str | None) -> li
     return beds
 
 
-def build_ward_streams(seed: int, bed_count: int, risk_model: str | None) -> list[dict]:
+def build_ward_streams(seed: int, bed_count: int) -> list[dict]:
     n = max(1, bed_count)
-    return [ward_bed_json(seed, i, risk_model) for i in range(n)]
+    return [ward_bed_json(seed, i) for i in range(n)]
 
 
 @app.get("/api/bed-frame")
@@ -273,14 +354,11 @@ def api_bed_frame(
     seed: int = Query(default=0, ge=0),
     bed: int = Query(default=0, ge=0, le=35),
     step: int = Query(default=0, ge=0),
-    risk_model: str | None = Query(default=None),
 ):
     if ARTIFACT_LOAD_ERROR:
         return JSONResponse({"error": ARTIFACT_LOAD_ERROR}, status_code=500)
     assert CFG is not None and META is not None and PRIMARY_MODEL_ID is not None
-    model_options = model_ids_primary_first(META, PRIMARY_MODEL_ID)
-    rm = risk_model if risk_model in model_options else PRIMARY_MODEL_ID
-    bundle = get_cached_bed_timeline(seed, bed, rm)
+    bundle = get_cached_bed_timeline(seed, bed)
     g = bundle["g"]
     fe = bundle["fe"]
     cols_d = META["features_deterioration"]
@@ -309,7 +387,6 @@ def home(
     seed: int = Query(default=0, ge=0),
     bed_count: int = Query(default=12, ge=1, le=36),
     selected_bed: int = Query(default=0, ge=0),
-    risk_model: str | None = Query(default=None),
 ):
     if ARTIFACT_LOAD_ERROR:
         return HTMLResponse(
@@ -323,16 +400,27 @@ def home(
 
     assert META is not None and PRIMARY_MODEL_ID is not None
     model_options = model_ids_primary_first(META, PRIMARY_MODEL_ID)
-    rm = risk_model if risk_model in model_options else PRIMARY_MODEL_ID
 
-    bed_summaries = build_ward_overview(
-        seed=seed, bed_count=bed_count, risk_model=rm
-    )
+    bed_summaries = build_ward_overview(seed=seed, bed_count=bed_count)
     chosen_bed_idx = min(selected_bed, len(bed_summaries) - 1)
     selected_bed_row = bed_summaries[chosen_bed_idx]
     data = selected_bed_row["details"]
 
-    ward_streams = build_ward_streams(seed=seed, bed_count=bed_count, risk_model=rm)
+    ward_streams = build_ward_streams(seed=seed, bed_count=bed_count)
+
+    assert CFG is not None
+    clinical = CFG.get("clinical_display") or {}
+    clinical_thresholds = {
+        "map_low_mmhg": float(CFG["alarms"]["map_threshold_mmhg"]),
+        "sbp_low_mmhg": float(CFG["alarms"]["sbp_threshold_mmhg"]),
+        "hr_high_bpm": float(clinical.get("hr_tachycardia_bpm", 100)),
+        "rr_low_per_min": float(clinical.get("rr_low_per_min", 8)),
+        "rr_high_per_min": float(clinical.get("rr_high_per_min", 30)),
+        "shock_index_high": float(clinical.get("shock_index_high", 0.9)),
+        "grid_minutes": int(CFG["data"]["grid_minutes"]),
+        "risk_delta_lookback_minutes": int(clinical.get("risk_delta_lookback_minutes", 15)),
+        "risk_delta_min_points": int(clinical.get("risk_delta_min_points", 5)),
+    }
 
     return templates.TemplateResponse(
         request=request,
@@ -344,10 +432,9 @@ def home(
             "ward_streams": ward_streams,
             "selected_bed_idx": chosen_bed_idx,
             "selected_bed_row": selected_bed_row,
-            "risk_model": rm,
             "model_options": model_options,
             "primary_model_id": PRIMARY_MODEL_ID,
-            "risk_model_is_primary": rm == PRIMARY_MODEL_ID,
+            "clinical_thresholds": clinical_thresholds,
             **data,
         },
     )
